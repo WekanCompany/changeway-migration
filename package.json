@@ -1,0 +1,31 @@
+{
+  "name": "changeway-migration",
+  "version": "1.0.0",
+  "description": "The Realm Object Server to Mongodb Realm Migration script written in typescript.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build":"tsc -p tsconfig.json",
+    "start": "npm run build && node ./build/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WekanCompany/changeway-migration.git"
+  },
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "mongodb": "^4.0.0",
+    "realm": "^6.1.4",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^16.3.2",
+    "typescript": "^4.3.5"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/WekanCompany/changeway-migration/issues"
+  },
+  "homepage": "https://github.com/WekanCompany/changeway-migration#readme"
+}
