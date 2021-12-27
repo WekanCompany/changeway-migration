@@ -5,14 +5,16 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build":"tsc -p tsconfig.json",
-    "start": "npm run build && node ./build/index.js"
+    "build": "tsc -p tsconfig.json",
+    "start": "rm -rf ./build && npm run build && node ./build/src/index.js",
+    "generate-id": "node ids/index.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WekanCompany/changeway-migration.git"
   },
   "dependencies": {
+    "bson-objectid": "^2.0.1",
     "dotenv": "^10.0.0",
     "mongodb": "^4.0.0",
     "realm": "^6.1.4",
