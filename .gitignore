@@ -7,3 +7,5 @@ logs/
 user-list.json
 
 ids/*
+
+realm-object-server

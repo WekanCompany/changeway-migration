@@ -65,3 +65,10 @@ export async function asyncForEach<T>(array: Array<T>, callback: (item: T, index
       await callback(array[index], index);
   }
 }
+
+
+export function omit(keys:any, obj:any):any {
+  if (!keys.length) return obj
+  const { [keys.pop()]: omitted, ...rest } = obj;
+  return omit(keys, rest);
+}

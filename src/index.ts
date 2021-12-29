@@ -2,17 +2,14 @@ import dotenv from "dotenv";
 import winston from "winston";
 import { Db, MongoClient } from "mongodb";
 import Realm from "realm";
-import { asyncForEach, initLogger, openRealm, readRealm } from "./utils";
-import { GlobalUserAndNotification } from "./models/ros";
-import { GlobalUserType } from "./models/ros/global/users";
+import { asyncForEach, initLogger, openRealm } from "./utils";
+import { GlobalUserAndNotification, UserSchema } from "./models/ros";
 import UserList from "./../user-list.json";
-import { N_NotificationType } from "./models/mongodb-realm";
-import { NotificationType } from "./models/ros/global/notifications";
 import MigrateGlobalUserAndNotification from "./migrations/globalUserAndNotifications";
+import MigrateUserSchemas from "./migrations/userSchema";
 
 const configuration: any = dotenv.config();
 var ObjectID = require("bson-objectid");
-var fs = require("fs");
 
 // ROS Informations
 let realmServerUrl: string;
@@ -24,6 +21,8 @@ let targetMongoDBUrl: string;
 let targetMongoDBName: string;
 
 let db: Db;
+let idDB: Db;
+let userIds: any
 
 // Logger
 let logDirPath;
@@ -52,27 +51,17 @@ logger.info(
 
 const userIDRunner = async () => {
   return new Promise(async (resolve, reject) => {
-    const users: any = {};
+    userIds = {};
     // Map User Id's.
     const { User }: any = UserList;
     if (User) {
       User.forEach((user: any) => {
         const { userId }: any = user;
         if (userId.startsWith("auth0_")) {
-          users[userId] = new ObjectID();
+          userIds[userId] = new ObjectID();
         }
       });
-
-      fs.writeFile(
-        `${__dirname}/user-ids.json`,
-        JSON.stringify(users),
-        function (err: any) {
-          if (err) {
-            return reject(err);
-          }
-          return resolve("success");
-        }
-      );
+      resolve(true)
     }
   });
 };
@@ -94,7 +83,6 @@ const migrate = async () => {
   return new Promise(async (resolve, reject) => {
     try {
       // Step1.
-
       /**
        * User Id Mapper.
        */
@@ -107,7 +95,9 @@ const migrate = async () => {
       await userIDRunner();
 
       // Step2.
-
+      /**
+       * Connect to the DB.
+       */
       const dbClient = new MongoClient(
         `${targetMongoDBUrl}/${targetMongoDBName}?retryWrites=true&w=majority`
       );
@@ -122,11 +112,16 @@ const migrate = async () => {
 
         if (dbClient) {
           db = dbClient.db(targetMongoDBName);
+          idDB = dbClient.db("idDB");
         } else {
           logger.error("Db Cannot be opened.");
           process.exit(0);
         }
 
+        // Step3.
+        /**
+         * Create a realm credential and login.
+         */
         // Realm Credentials
         const credentials = Realm.Sync.Credentials.usernamePassword(
           realmUsername,
@@ -137,8 +132,10 @@ const migrate = async () => {
           credentials
         );
 
-        // Step 3.
-
+        // Step 4.
+        /**
+         * Migrate Global Schemas.
+         */
         logger.info(
           `Migration Global User and Notifications from path: realms://${realmServerUrl}/GlobalUserAndNotification`
         );
@@ -149,18 +146,34 @@ const migrate = async () => {
           logger
         );
         if (globalUserRealm) {
-          await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
+          // await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
         }
 
-        // Step 4.
-
+        // Step 5.
+        /**
+         * Migrate User Schema
+         */
+        const userIdKeys = Object.keys(userIds);
         logger.info(
-          `Migration Global User and Notifications from path: realms://${realmServerUrl}/GlobalUserAndNotification`
+          `Migrating totally ${userIdKeys.length} Users.`
         );
+        await asyncForEach(userIdKeys, async (userId) => {
+          const userSchema = await openRealm(
+            user,
+            `realms://${realmServerUrl}/${userId}/userProfile`,
+            UserSchema,
+            logger,
+          );
+          if (userSchema) {
+            await MigrateUserSchemas(userId, userIds[userId], userSchema, db, logger, idDB);
+            userSchema.close()
+          }
+        });
 
         resolve(true);
       });
     } catch (e) {
+      console.log(e)
       reject(e);
     }
   });
