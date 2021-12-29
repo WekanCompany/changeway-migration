@@ -4,7 +4,7 @@
       "target": "es5",
       "module": "commonjs",
       "outDir": "./build",
-  
+      "resolveJsonModule":true,
       "strict": true,
       // "noImplicitAny": true,
       // "strictNullChecks": true,

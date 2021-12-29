@@ -3,3 +3,9 @@ node_modules
 build
 
 logs/
+
+user-list.json
+
+ids/*
+
+realm-object-server
