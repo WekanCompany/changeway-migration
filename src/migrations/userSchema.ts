@@ -11,7 +11,7 @@ import { compact } from 'lodash';
 import { N_UserType } from "../models/mongodb-realm/user/User";
 var ObjectID = require("bson-objectid");
 
-const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db: Db, logger: winston.Logger, idDB: Db) => {
+const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db: Db, logger: winston.Logger, idDb: Db) => {
     return new Promise(async (resolve, reject) => {
         try {
 
@@ -23,7 +23,7 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
             );
             if (profiles && profiles.length > 0) {
                 let userProfile: N_ProfileType = profiles[0] as N_ProfileType;
-
+                const IDCollection = idDb.collection("id");
                 //0) Add _id and _partition for the user Profile.
 
                 userProfile._id = new ObjectId()
@@ -103,7 +103,8 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
                 }
                 const UserCollection = db.collection("User");
                 await UserCollection.insertOne(user);
-
+                await IDCollection.insertOne({ type: "company", ids: companyMapper, user: { id: oldUserId, _id: userObjectId } });
+                await IDCollection.insertOne({ type: "workshop", ids: workshopMapper, user: { id: oldUserId, _id: userObjectId } });
                 logger.info(`Migration completed for the user ${oldUserId}`)
 
             } else {

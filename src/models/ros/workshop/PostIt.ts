@@ -1,0 +1,86 @@
+import { FileType } from "../common/File";
+import { LinkType } from "../common/Link";
+import { MagnetType } from "../common/Magnet";
+import { SelectType } from "../common/Select";
+import { IconType } from "./Icon";
+
+export type PostItType = {
+	postItId: string,
+	owner: string,
+	type: string,
+	x: number,
+	y: number,
+	value: string,
+	valueRight: string,
+	magnet: MagnetType,
+	icon: IconType | any,
+	state: string,
+	file: FileType,
+	colorNumber: number,
+	zoneId: string,
+	flowTable1: number[],
+	flowTable2: number[],
+	priority: number,
+	favourite: string,
+	productVisible: boolean,
+	infoVisible: boolean,
+	link: LinkType,
+	audioRecording: FileType,
+	videoRecording: FileType,
+	image: FileType,
+	list: SelectType[],
+	latestChange?: string,
+	deleted: boolean,
+	deletedOrder: number,
+	moved?: number,
+	likes: number,
+	lastMoved?: string,
+	linkageStatus: boolean,
+	fontSize?: number, //old and unused
+	fontSizeVariable?: number,
+	width: number,
+	height: number,
+	imageText: string
+}
+export const PostIt = {
+	name: "PostIt",
+	primaryKey: "postItId",
+	properties: {
+		postItId: "string",
+		owner: "string",
+		type: "string",
+		x: "double",
+		y: "double",
+		value: "string",
+		valueRight: "string",
+		magnet: "Magnet",
+		icon: "Icon",
+		state: "string",
+		file: "File",
+		colorNumber: "int",
+		zoneId: "string",
+		flowTable1: "double?[]",
+		flowTable2: "double?[]",
+		priority: "int",
+		favourite: "string",
+		productVisible: "bool",
+		infoVisible: "bool",
+		link: "Link",
+		audioRecording: "File",
+		videoRecording: "File",
+		image: "File",
+		list: "Select[]",
+		latestChange: "string?",
+		deleted: "bool",
+		deletedOrder: "int",
+		moved: "int?",
+		likes: "int",
+		lastMoved: "string?",
+		linkageStatus: { type: "bool?", default: false },
+		fontSize: "int?", //old and unused
+		fontSizeVariable: "double?",
+		width: "int?",
+		height: "int?",
+		imageText: "string?"
+	}
+};
