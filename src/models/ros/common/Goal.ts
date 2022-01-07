@@ -1,3 +1,5 @@
+import { PostItType } from "../workshop/PostIt";
+import { ZoneType } from "../workshop/Zone";
 import { KPIType } from "./KPI";
 import { KPIResultsType } from "./KPIResults";
 import { MagnetType } from "./Magnet";
@@ -10,7 +12,7 @@ export type GoalType = {
     unitsGroup?: string,
     units?: string,
     kpi: KPIType,
-    kpiId: string,
+    kpiId: string|null,
     kpiResults: KPIResultsType,
     nonRecurringResults: KPIResultsType,
     recurringResults: KPIResultsType,
@@ -28,11 +30,11 @@ export type GoalType = {
     favourite?: string,
     priority?: number,
     deleted: boolean,
-    postItId?: string,
+    postItId?: PostItType,
     magnet: MagnetType,
     useSuffix: boolean,
     chosenSuffix?: string,
-    zoneId?: string,
+    zoneId?: ZoneType,
     state?: string,
     fromValue2?: number,
     toValue2?: number,

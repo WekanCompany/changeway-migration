@@ -9,7 +9,7 @@ export type ZoneType = {
     x: number;
     y: number;
     colour?: string;
-    icon: IconType;
+    icon: IconType | any;
     backgroundImage: FileType;
     titleAlignment?: string;
     isHeader:boolean;

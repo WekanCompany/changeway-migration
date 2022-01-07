@@ -37,7 +37,7 @@ export type WorkshopType = {
 	objectList: MetadataObjectType[],
 	nonRecurringKPITotals: KPIResultsType,
 	recurringKPITotals: KPIResultsType,
-	breakthrough: BreakthroughMetadataType,
+	breakthrough: BreakthroughMetadataType|any,
 	minorVerionforV1: number,
 	labelList: LabelType[]
 }

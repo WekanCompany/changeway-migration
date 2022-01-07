@@ -103,8 +103,8 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
                 }
                 const UserCollection = db.collection("User");
                 await UserCollection.insertOne(user);
-                await IDCollection.insertOne({ type: "company", ids: companyMapper, user: { id: oldUserId, _id: userObjectId } });
-                await IDCollection.insertOne({ type: "workshop", ids: workshopMapper, user: { id: oldUserId, _id: userObjectId } });
+                await IDCollection.insertOne({ type: "company", ids: companyMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id} });
+                await IDCollection.insertOne({ type: "workshop", ids: workshopMapper, user: { id: oldUserId, _id: userObjectId , userProfile: userProfile._id} });
                 logger.info(`Migration completed for the user ${oldUserId}`)
 
             } else {

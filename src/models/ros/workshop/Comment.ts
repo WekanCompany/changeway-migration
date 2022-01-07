@@ -3,9 +3,9 @@ import { WorkshopParticipantType } from "./WorkshopPartitipant";
 
 export type CommentType = {
 	id: string,
-	commentId: string,
+	commentId: string|any,
 	userCommented: WorkshopParticipantType,
-	taskId: string,
+	taskId: string|any,
 	comment: string,
 	replies: CommentType[],
 	mentions: WorkshopParticipantType[],

@@ -34,7 +34,7 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     company._partition = company.companyUrl = `companyRealm=${newCompanyId}`
 
                 const companyCollection = db.collection("Company");
-                
+
                 // Step1:
                 //Combine all the files and upload to Files.
                 let allFiles: FileType[] = [company.logoFile, ...company.logos, company.bannerImage, company.croppedLogo]
@@ -63,6 +63,11 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     company.croppedLogo = fileMapper[company.croppedLogo.fileId]
                 }
                 company.logos = company.logos.map((x) => fileMapper[x.fileId])
+
+                // TODO Migrate KPI, Single Template and Workshop Template.
+                company.kpis = [];
+                company.singleTemplates = [];
+                company.workshopTemplates = [];
 
                 //Step 2: Participants.
                 const participants: any = [];
@@ -156,24 +161,28 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
 
                 //Step 6: Organization Metadata.
                 const metadatas: any = [];
-                const metadataCollection = db.collection("SettingsMetadata");
+                // const metadataCollection = db.collection("SettingsMetadata");
                 await asyncForEach(company.organisationMetadata, async (metaData) => {
                     let newMetadata: N_SettingsMetadataType = {
                         ...metaData,
                         _id: new ObjectID(),
-                        _partition: `companyRealm=${newCompanyId}`
                     }
                     newMetadata = omit(["settingsMetadataId"], newMetadata);
-                    await metadataCollection.insertOne(newMetadata);
-                    metadatas.push(newMetadata._id);
+                    // await metadataCollection.insertOne(newMetadata);
+                    metadatas.push(newMetadata);
                 })
                 company.organisationMetadata = metadatas;
 
                 //Insert the Company.
                 await companyCollection.insertOne(company);
-                
+
             } else {
                 logger.error(`Company ${companyId} not found. So, Ignoring.`)
+                const ProfileCollection = db.collection("Profile");
+                
+                await ProfileCollection.updateOne(
+                    { _id: user.userProfile },
+                    { $pull: { companies: { _id: newCompanyId } } });
             }
             resolve(true)
         } catch (e) {

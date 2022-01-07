@@ -24,7 +24,7 @@ export type PostItType = {
 	favourite: string,
 	productVisible: boolean,
 	infoVisible: boolean,
-	link: LinkType,
+	link: LinkType|any,
 	audioRecording: FileType,
 	videoRecording: FileType,
 	image: FileType,

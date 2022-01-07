@@ -2,7 +2,7 @@ import { BoardCardType } from "./BoardCard";
 
 export type CompositeCardType = {
 	compositeId: string,
-	linkId: string,
+	linkId?: string|null,
 	type: string,
 	title: string,
 	editors: string[],

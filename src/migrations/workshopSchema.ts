@@ -44,6 +44,34 @@ import { N_PostItType } from "../models/mongodb-realm/workshop/PostIt";
 import { SelectType } from "../models/ros/common/Select";
 import { N_SummaryPostItType } from "../models/mongodb-realm/workshop/SummaryPostItType";
 import { N_MagnetType } from "../models/mongodb-realm/common/Magnet";
+import { N_CommentType } from "../models/mongodb-realm/workshop/Comment";
+import { N_EventTaskType } from "../models/mongodb-realm/workshop/EventTaskType";
+import { N_EventWeekType } from "../models/mongodb-realm/workshop/EventWeek";
+import { N_TextGoalType } from "../models/mongodb-realm/workshop/TextGoal";
+import { N_LabelType } from "../models/mongodb-realm/common/Label";
+import { N_MajorMinorType } from "../models/mongodb-realm/common/MajorMinor";
+import { N_FileType } from "../models/mongodb-realm/common/File";
+import { N_SelectType } from "../models/mongodb-realm/common/Select";
+import { KPIResultsType } from "../models/ros/common/KPIResults";
+import { N_GoalType } from "../models/mongodb-realm/common/Goal";
+import { N_CompositeCardType } from "../models/mongodb-realm/workshop/CompositeCard";
+import { N_BoardCardType } from "../models/mongodb-realm/workshop/BoardCard";
+import { N_ZoneType } from "../models/mongodb-realm/workshop/ZoneType";
+import { N_GraphType } from "../models/mongodb-realm/workshop/Graph";
+import { N_GeneralType } from "../models/mongodb-realm/workshop/General";
+import { N_CardTextType } from "../models/mongodb-realm/workshop/CardText";
+import { N_PreeventChecklistType } from "../models/mongodb-realm/workshop/PreeventChecklist";
+import { N_MetaObjectType } from "../models/mongodb-realm/workshop/MetaObject";
+import { N_DataBoxType } from "../models/mongodb-realm/workshop/Databox";
+import { N_BoardType } from "../models/mongodb-realm/workshop/Board";
+import { N_BoardColumnType } from "../models/mongodb-realm/workshop/BoardColumn";
+import { N_BoardZoneType } from "../models/mongodb-realm/workshop/BoardZone";
+import { BoardZoneLinkType } from "../models/ros/workshop/BoardZoneLink";
+import { N_BoardZoneLinkType } from "../models/mongodb-realm/workshop/BoardZoneLink";
+import { N_TemplateMetaDataType } from "../models/mongodb-realm/workshop/TemplateMetadata";
+import { ScorecardType } from "../models/ros/common/Scorecard";
+import { N_ScorecardType } from "../models/mongodb-realm/common/Scorecard";
+import { N_WorkshopType } from "../models/mongodb-realm/workshop/Workshop";
 
 
 
@@ -84,35 +112,273 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 //Step 1: Id Mapper.
                 const { coll: actions, ids: actionMapper } = await readAndGenerateId<ActionType>(realm, "Action", "actionId");
                 const { coll: workshopParticipants, ids: participantMapper } = await readAndGenerateId<WorkshopParticipantType>(realm, "Participant", "id");
-                const { coll: textGoals, ids: textGoalMapper } = await readAndGenerateId<TextGoalType>(realm, "TextGoal", "textGoalId")
+                let { coll: textGoals, ids: textGoalMapper } = await readAndGenerateId<TextGoalType>(realm, "TextGoal", "textGoalId")
                 let { coll: magnets, ids: magnetsMapper } = await readAndGenerateId<MagnetType>(realm, "Magnet", "id");
-                const { coll: label, ids: labelMapper } = await readAndGenerateId<LabelType>(realm, "Label", "_id");
+                let { coll: label, ids: labelMapper } = await readAndGenerateId<LabelType>(realm, "Label", "_id");
                 const { coll: xMatrixs, ids: xMatricMapper } = await readAndGenerateId<XMatrixType>(realm, "XMatrix", "xMatrixId");
                 const { coll: xMatrixTriangles, ids: XMatrixTriangleMapper } = await readAndGenerateId<XMatrixTriangleType>(realm, "XMatrixTriangle", "xMatrixTriangleId");
                 const { coll: XMatrixGoals, ids: XMatrixGoalMapper } = await readAndGenerateId<XMatrixGoalType>(realm, "XMatrixGoal", "xMatrixGoalId");
-                const { coll: majorMinor, ids: majorMinorMapper } = await readAndGenerateId<MajorMinorType>(realm, "MajorMinor", "majorMinorId");
+                let { coll: majorMinor, ids: majorMinorMapper } = await readAndGenerateId<MajorMinorType>(realm, "MajorMinor", "majorMinorId");
                 let { coll: brainstorm, ids: brainstormMapper } = await readAndGenerateId<BrainstormType>(realm, "Brainstorm", "brainstormId");
                 let { coll: postIt, ids: postItMapper } = await readAndGenerateId<PostItType>(realm, "PostIt", "postItId");
-                const { coll: zone, ids: zoneMapper } = await readAndGenerateId<ZoneType>(realm, "Zone", "zoneId");
-                const { coll: dataBox, ids: dataBoxMapper } = await readAndGenerateId<DataBoxType>(realm, "DataBox", "dataBoxId");
-                const { coll: board, ids: boardMapper } = await readAndGenerateId<BoardType>(realm, "Board", "boardId");
-                const { coll: boardColumn, ids: boardColumnMapper } = await readAndGenerateId<BoardColumnType>(realm, "BoardColumn", "columnId");
-                const { coll: boardZone, ids: boardZoneMapper } = await readAndGenerateId<BoardZoneType>(realm, "BoardZone", "zoneId");
-                const { coll: boardCard, ids: boardCardMapper } = await readAndGenerateId<BoardCardType>(realm, "BoardCard", "cardId");
-                const { coll: cardText, ids: cardTextMapper } = await readAndGenerateId<CardTextType>(realm, "CardText", "cardTextId");
+                let { coll: zone, ids: zoneMapper } = await readAndGenerateId<ZoneType>(realm, "Zone", "zoneId");
+                let { coll: dataBox, ids: dataBoxMapper } = await readAndGenerateId<DataBoxType>(realm, "DataBox", "dataBoxId");
+                let { coll: board, ids: boardMapper } = await readAndGenerateId<BoardType>(realm, "Board", "boardId");
+                let { coll: boardColumn, ids: boardColumnMapper } = await readAndGenerateId<BoardColumnType>(realm, "BoardColumn", "columnId");
+                let { coll: boardZone, ids: boardZoneMapper } = await readAndGenerateId<BoardZoneType>(realm, "BoardZone", "zoneId");
+                let { coll: boardCard, ids: boardCardMapper } = await readAndGenerateId<BoardCardType>(realm, "BoardCard", "cardId");
+                let { coll: cardText, ids: cardTextMapper } = await readAndGenerateId<CardTextType>(realm, "CardText", "cardTextId");
                 let { coll: summaryPostIt, ids: summaryPostItMapper } = await readAndGenerateId<SummaryPostItType>(realm, "SummaryPostIt", "postItId");
-                const { coll: graph, ids: graphMapper } = await readAndGenerateId<GraphType>(realm, "Graph", "graphId");
-                const { coll: preEventChecklist, ids: preEventChecklistMapper } = await readAndGenerateId<PreEventChecklistType>(realm, "PreEventChecklist", "id");
-                const { coll: eventWeek, ids: eventWeekMapper } = await readAndGenerateId<EventWeekType>(realm, "EventWeek", "zoneId");
-                const { coll: eventTask, ids: eventTaskMapper } = await readAndGenerateId<EventTaskType>(realm, "EventTask", "cardId");
-                const { coll: comment, ids: commentMapper } = await readAndGenerateId<CommentType>(realm, "Comment", "commentId");
+                let { coll: graph, ids: graphMapper } = await readAndGenerateId<GraphType>(realm, "Graph", "graphId");
+                let { coll: preEventChecklist, ids: preEventChecklistMapper } = await readAndGenerateId<PreEventChecklistType>(realm, "PreEventChecklist", "id");
+                let { coll: eventWeek, ids: eventWeekMapper } = await readAndGenerateId<EventWeekType>(realm, "EventWeek", "zoneId");
+                let { coll: eventTask, ids: eventTaskMapper } = await readAndGenerateId<EventTaskType>(realm, "EventTask", "cardId");
+                let { coll: comment, ids: commentMapper } = await readAndGenerateId<CommentType>(realm, "Comment", "commentId");
                 let { coll: persona, ids: personaMapper } = await readAndGenerateId<PersonaType>(realm, "Persona", "personaId");
-                const { coll: compositeCard, ids: compositeCardMapper } = await readAndGenerateId<CompositeCardType>(realm, "CompositeCard", "compositeId");
-                const { coll: general, ids: generalMapper } = await readAndGenerateId<GeneralType>(realm, "General", "generalId");
-                const { coll: metadataObject, ids: metadataObjectMapper } = await readAndGenerateId<MetadataObjectType>(realm, "MetadataObject", "objectId");
-                const { coll: files, ids: fileMapper } = await readAndGenerateId<FileType>(realm, "File", "fileId");
-                const { coll: goals, ids: goalMapper } = await readAndGenerateId<GoalType>(realm, "Goal", "goalId");
-                const { coll: selects, ids: selectMapper } = await readAndGenerateId<SelectType>(realm, "Select", "selectId");
+                let { coll: compositeCard, ids: compositeCardMapper } = await readAndGenerateId<CompositeCardType>(realm, "CompositeCard", "compositeId");
+                let { coll: general, ids: generalMapper } = await readAndGenerateId<GeneralType>(realm, "General", "generalId");
+                let { coll: metadataObject, ids: metadataObjectMapper } = await readAndGenerateId<MetadataObjectType>(realm, "MetadataObject", "objectId");
+                let { coll: files, ids: fileMapper } = await readAndGenerateId<FileType>(realm, "File", "fileId");
+                let { coll: goals, ids: goalMapper } = await readAndGenerateId<GoalType>(realm, "Goal", "goalId");
+                let { coll: selects, ids: selectMapper } = await readAndGenerateId<SelectType>(realm, "Select", "selectId");
+                let { coll: scorecard, ids: scoreCardMapper } = await readAndGenerateId<ScorecardType>(realm, "Scorecard", "scorecardId");
+                const kpiResultsCollection = db.collection("KPIResults");
+
+
+
+                //Files
+                const fileCollection = db.collection("File");
+                files = files.map((o: FileType) => {
+                    let n = o as N_FileType;
+                    n._id = fileMapper[o.fileId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    return n;
+                })
+                if (files.length > 0) {
+                    await fileCollection.insertMany(files);
+                }
+
+                //Graph
+                const graphColl = db.collection("Graph");
+                graph = graph.map((o: GraphType) => {
+                    let n = o as N_GraphType;
+                    n._id = graphMapper[o.graphId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.allData = o.allData.map((a) => ({ ...a, _id: new ObjectID() }))
+                    return n;
+                })
+                if (graph.length > 0) {
+                    await graphColl.insertMany(graph);
+                }
+
+
+                //DataBox
+                const databoxColl = db.collection("DataBox");
+                dataBox = dataBox.map((o: DataBoxType) => {
+                    let n = o as N_DataBoxType;
+                    n._id = dataBoxMapper[o.dataBoxId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.rowsForBox = o.rowsForBox.map((x) => ({ ...x, _id: new ObjectID() }))
+                    return n;
+                })
+                if (dataBox.length > 0) {
+                    await databoxColl.insertMany(dataBox);
+                }
+
+
+                //Board
+                const boardColl = db.collection("Board");
+                board = board.map((o: BoardType) => {
+                    let n = o as N_BoardType;
+                    n._id = boardMapper[o.boardId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.checklist = o.checklist.map((c) => preEventChecklistMapper[c.id]);
+                    n.columns = o.columns.map((c) => boardColumnMapper[c.columnId]);
+                    return n;
+                })
+                if (board.length > 0) {
+                    await boardColl.insertMany(board);
+                }
+
+                //Board Column
+                const boardColumnColl = db.collection("BoardColumn");
+                boardColumn = boardColumn.map((o: BoardColumnType) => {
+                    let n = o as N_BoardColumnType;
+                    n._id = boardColumnMapper[o.columnId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.zones = o.zones.map(z => boardZoneMapper[z.zoneId])
+                    return n;
+                })
+                if (boardColumn.length > 0) {
+                    await boardColumnColl.insertMany(boardColumn);
+                }
+
+
+                //Board Zone
+                const boardZoneColl = db.collection("BoardZone");
+                boardZone = boardZone.map((o: BoardZoneType) => {
+                    let n = o as N_BoardZoneType;
+                    n._id = boardZoneMapper[o.zoneId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.cards = o.cards.map((x) => boardCardMapper[x.cardId]);
+                    n.linkages = o.linkages.map((l: N_BoardZoneLinkType) => {
+                        l._id = new ObjectID()
+                        if (l.zone) {
+                            l.zone = zoneMapper[l.zone.zoneId];
+                        }
+                        if (l.composite) {
+                            const composite: any = l.composite;
+                            composite._id = new ObjectID();
+                            composite.cards = composite.cards.map((c: any) => ({ ...c, _id: new ObjectID() }))
+                            l.composite = composite;
+                        }
+
+                    })
+                    if (n.settings) {
+                        const settings: any = n.settings;
+                        settings._id = new ObjectID();
+                        if (n.settings.measureSeeSaySettings) {
+                            settings.measureSeeSaySettings = {
+                                ...n.settings.measureSeeSaySettings,
+                                _id: new ObjectID()
+                            }
+                        }
+                        settings.compositeTypes = n.settings.compositeTypes.map((y:any) => {
+                            y.cards = y.cards.map((c:any)=> ({...c, _id:new ObjectID()}))
+                            return { ...y, _id: new ObjectID() }
+                        })
+                        n.settings = settings;
+                    }
+                    return n;
+                })
+                if (boardZone.length > 0) {
+                    await boardZoneColl.insertMany(boardZone);
+                }
+
+                //Graph
+                const generalColl = db.collection("General");
+                general = general.map((o: GeneralType) => {
+                    let n = o as N_GeneralType;
+                    n._id = generalMapper[o.generalId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    if (n.card) {
+                        n.card = boardCardMapper[o.card.cardId];
+                    }
+                    return n;
+                })
+                if (general.length > 0) {
+                    await generalColl.insertMany(general);
+                }
+
+                //CardText
+                const cardTextCall = db.collection("CardText");
+                cardText = cardText.map((o: CardTextType) => {
+                    let n = o as N_CardTextType;
+                    n._id = cardTextMapper[o.cardTextId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+
+                    return n;
+                })
+                if (cardText.length > 0) {
+                    await cardTextCall.insertMany(cardText);
+                }
+
+                //Preevent Checklist
+                const preeventCheckListColl = db.collection("PreEventChecklist");
+                preEventChecklist = preEventChecklist.map((o: PreEventChecklistType) => {
+                    let n = o as N_PreeventChecklistType;
+                    n._id = preEventChecklistMapper[o.id];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.zones = o.zones.map((z) => eventWeekMapper[z.zoneId]);
+                    return n;
+                })
+                if (preEventChecklist.length > 0) {
+                    await preeventCheckListColl.insertMany(preEventChecklist);
+                }
+
+
+                //Matadata object
+                const metaObjectColl = db.collection("MetadataObject");
+                metadataObject = metadataObject.map((o: MetadataObjectType) => {
+                    let n = o as N_MetaObjectType;
+                    n._id = metadataObjectMapper[o.objectId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    return n;
+                })
+                if (metadataObject.length > 0) {
+                    await metaObjectColl.insertMany(metadataObject);
+                }
+
+                //Composite Card
+                const compositeCardColl = db.collection("CompositeCard");
+                compositeCard = compositeCard.map((o: CompositeCardType) => {
+                    let n = o as N_CompositeCardType;
+                    n._id = compositeCardMapper[o.compositeId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.linkId = null;
+                    n.cards = o.cards.map((c) => boardCardMapper[c.cardId]);
+                    return n;
+                })
+                if (compositeCard.length > 0) {
+                    await compositeCardColl.insertMany(compositeCard);
+                }
+
+                //Board Card.
+                const boardCardColl = db.collection("BoardCard");
+                boardCard = boardCard.map((o: BoardCardType) => {
+                    let n = o as N_BoardCardType;
+                    n._id = boardCardMapper[o.cardId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.linkId = null;
+                    if (n.settings) {
+                        const settings: any = n.settings;
+                        settings._id = new ObjectID();
+                        if (n.settings.measureSeeSaySettings) {
+                            settings.measureSeeSaySettings = {
+                                ...n.settings.measureSeeSaySettings,
+                                _id: new ObjectID()
+                            }
+                        }
+                        settings.compositeTypes = n.settings.compositeTypes.map(x => ({ ...x, _id: new ObjectID() }))
+                        n.settings = settings;
+                    }
+                    return n;
+                })
+                if (boardCard.length > 0) {
+                    await boardCardColl.insertMany(boardCard);
+                }
+
+                //Zone
+                const zoneColl = db.collection("Zone");
+                zone = zone.map((o: ZoneType) => {
+                    let n = o as N_ZoneType;
+                    n._id = zoneMapper[o.zoneId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    if (n.backgroundImage) {
+                        n.backgroundImage = fileMapper[o.backgroundImage.fileId];
+                    }
+                    if (n.icon) {
+                        n.icon._id = new ObjectID();
+                    }
+
+                    return n;
+                })
+                if (zone.length > 0) {
+                    await zoneColl.insertMany(zone);
+                }
+
+                //Select
+                const selectCollection = db.collection("Select");
+                selects = selects.map((o: SelectType) => {
+                    let n = o as N_SelectType;
+                    n._id = selectMapper[o.selectId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    return n;
+                })
+                if (selects.length > 0) {
+                    await selectCollection.insertMany(selects);
+                }
+
 
                 // Migrate Actions & Participants:
                 const actionCollection = db.collection("Action");
@@ -135,18 +401,52 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     await wParticipantCollection.insertOne(newParticipant);
                 })
 
-                 //Magnets
-                 const magnetCollection = db.collection("Magnet");
-                 magnets = magnets.map((o: MagnetType) => {
-                     let n = o as N_MagnetType;
-                     n._id = magnetsMapper[o.id];
-                     n._partition = `workshopRealm=${newWorkshopId}`;
-                     return n;
-                 })
-                 if(magnets.length>0){
-                     await magnetCollection.insertMany(magnets);
-                 }
-               
+                //Magnets
+                const magnetCollection = db.collection("Magnet");
+                magnets = magnets.map((o: MagnetType) => {
+                    let n = o as N_MagnetType;
+                    n._id = magnetsMapper[o.id];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    return n;
+                })
+                if (magnets.length > 0) {
+                    await magnetCollection.insertMany(magnets);
+                }
+                //TextGoal
+                const textGoalCollection = db.collection("TextGoal");
+                textGoals = textGoals.map((o: TextGoalType) => {
+                    let n = o as N_TextGoalType;
+                    n._id = textGoalMapper[o.textGoalId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    return n;
+                })
+                if (textGoals.length > 0) {
+                    await textGoalCollection.insertMany(textGoals);
+                }
+                //Label
+                const labelCollection = db.collection("Label");
+                const l: any = label.map((o: LabelType) => {
+                    let n = o as N_LabelType;
+                    n._id = labelMapper[o._id];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    return n;
+                })
+                if (label.length > 0) {
+                    await labelCollection.insertMany(l);
+                }
+
+                //MajorMinor
+                const majorMinorColl = db.collection("MajorMinor");
+                majorMinor = majorMinor.map((o: MajorMinorType) => {
+                    let n = o as N_MajorMinorType;
+                    n._id = majorMinorMapper[o.majorMinorId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.linkedGoalId = goalMapper[o.linkedGoalId];
+                    return n;
+                })
+                if (majorMinor.length > 0) {
+                    await majorMinorColl.insertMany(majorMinor);
+                }
 
                 //Persona
                 const personaCollection = db.collection("Persona");
@@ -158,13 +458,13 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     nP.description = p.description.map((d) => brainstormMapper[d.brainstormId]);
                     nP.empathyMap = p.empathyMap.map(e => brainstormMapper[e.brainstormId]);
                     nP.hillStatements = p.hillStatements.map(h => brainstormMapper[h.brainstormId]);
-                    if(nP.image){
+                    if (nP.image) {
                         nP.image = fileMapper[p.image.fileId];
                     }
                     nP = omit(["personaId"], nP)
                     return nP;
                 });
-                if(persona.length>0){
+                if (persona.length > 0) {
                     await personaCollection.insertMany(persona);
                 }
 
@@ -177,14 +477,28 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n.postIts = b.postIts.map((p) => postItMapper[p.postItId]);
                     n.summaryPostIts = b.summaryPostIts.map((s) => summaryPostItMapper[s.postItId])
                     n.zones = b.zones.map((z) => zoneMapper[z.zoneId])
-                    n.goals = b.goals.map((g) => ({ ...g, _id: new ObjectID() }));
-                    n.axis = b.axis.map((a) => ({ ...a, _id: new ObjectID() }));
+                    n.goals = b.goals.map((g) => goalMapper[g.goalId]);
+                    n.axis = b.axis.map((a) => {
+                        a.xAxis = a.xAxis.map((x) => {
+                            x.points = x.points.map((p) => {
+                                return { ...p, _id: new ObjectID() }
+                            })
+                            return { ...x, _id: new ObjectID() }
+                        })
+                        a.yAxis = a.yAxis.map((x) => {
+                            x.points = x.points.map((p) => {
+                                return { ...p, _id: new ObjectID() }
+                            })
+                            return { ...x, _id: new ObjectID() }
+                        })
+                        return { ...a, _id: new ObjectID() }
+                    });
                     return n;
                 })
-                if(brainstorm.length>0){
+                if (brainstorm.length > 0) {
                     await brianstromCollection.insertMany(brainstorm);
                 }
-              
+
 
                 //Post it
                 const postItCollection = db.collection("PostIt");
@@ -192,70 +506,255 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_PostItType;
                     n._id = postItMapper[o.postItId];
                     n._partition = `workshopRealm=${newWorkshopId}`;
-                    n.list = o.list.map((l)=> selectMapper[l.selectId]);
-                    if(n.file) {
+                    n.list = o.list.map((l) => selectMapper[l.selectId]);
+                    if(n.link){
+                    n.link = {...o.link, _id: new ObjectID()}
+                    }
+                    if (n.file) {
                         n.file = fileMapper[o.file.fileId];
                     }
-                    if(n.audioRecording) {
+                    if (n.audioRecording) {
                         n.audioRecording = fileMapper[o.audioRecording.fileId];
                     }
-                    if(n.videoRecording) {
+                    if (n.videoRecording) {
                         n.videoRecording = fileMapper[o.videoRecording.fileId];
                     }
-                    if(n.image) {
+                    if (n.image) {
                         n.image = fileMapper[o.image.fileId];
                     }
-                    if(n.icon){
-                        n.icon = {...n.icon, _id:new ObjectID()}
+                    if (n.icon) {
+                        n.icon = { ...n.icon, _id: new ObjectID() }
                     }
-                    if(n.magnet){
-                        n.magnet = magnetsMapper[o.magnet.id]; 
+                    if (n.magnet) {
+                        n.magnet = magnetsMapper[o.magnet.id];
                     }
-                    if(n.zoneId){
+                    if (n.zoneId) {
                         n.zoneId = zoneMapper[o.zoneId]
                     }
                     return n;
                 })
-                if(postIt.length>0){
+                if (postIt.length > 0) {
                     await postItCollection.insertMany(postIt);
                 }
 
 
-                 //Summart Post it
-                 const summaryPostitCollection = db.collection("SummaryPostIt");
-                 summaryPostIt = summaryPostIt.map((o: SummaryPostItType) => {
-                     let n = o as N_SummaryPostItType;
-                     n._id = summaryPostItMapper[o.postItId];
-                     n._partition = `workshopRealm=${newWorkshopId}`;
-                     if(n.zoneId){
-                         n.zoneId = zoneMapper[o.zoneId]
-                     }
-                     return n;
-                 })
-                 if(summaryPostIt.length>0){
-                     await summaryPostitCollection.insertMany(summaryPostIt);
-                 }
+                //Summart Post it
+                const summaryPostitCollection = db.collection("SummaryPostIt");
+                summaryPostIt = summaryPostIt.map((o: SummaryPostItType) => {
+                    let n = o as N_SummaryPostItType;
+                    n._id = summaryPostItMapper[o.postItId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.cardId = null;
+                    if (n.zoneId) {
+                        n.zoneId = zoneMapper[o.zoneId]
+                    }
+                    return n;
+                })
+                if (summaryPostIt.length > 0) {
+                    await summaryPostitCollection.insertMany(summaryPostIt);
+                }
+
+                //Comment
+                const commentCollection = db.collection("Comment");
+                comment = comment.map((o: CommentType) => {
+                    let n = o as N_CommentType;
+                    n._id = commentMapper[o.id];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.commentId = new ObjectID();
+                    n.taskId = null;
+                    if (n.userCommented) {
+                        n.userCommented = participantMapper[o.userCommented.id];
+                    }
+                    n.replies = o.replies.map((r) => commentMapper[r.id]);
+                    n.mentions = o.mentions.map((m) => participantMapper[m.id]);
+                    n.emoticons = o.emoticons.map((e) => {
+                        e.participant = participantMapper[e.participant.id];
+                        return { ...e, _id: new ObjectID() }
+                    })
+                    return n;
+                })
+                if (comment.length > 0) {
+                    await commentCollection.insertMany(comment);
+                }
+
+                //EventTask
+                const eventCollection = db.collection("EventTask");
+                eventTask = eventTask.map((o: EventTaskType) => {
+                    let n = o as N_EventTaskType;
+                    n._id = eventTaskMapper[o.cardId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    if (n.people) {
+                        n.people = participantMapper[o.people.id];
+                    }
+                    n.comments = o.comments.map((c) => commentMapper[c.id]);
+                    n.assignees = o.assignees.map((m) => participantMapper[m.id]);
+                    n.attachments = o.attachments.map(f => fileMapper[f.fileId]);
+                    n.labels = o.labels.map(l => labelMapper[l._id]);
+                    return n;
+                })
+                if (eventTask.length > 0) {
+                    await eventCollection.insertMany(eventTask);
+                }
+                //EventWeek
+                const eventweekCollection = db.collection("EventWeek");
+                eventWeek = eventWeek.map((o: EventWeekType) => {
+                    let n = o as N_EventWeekType;
+                    n._id = eventWeekMapper[o.zoneId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.cards = o.cards.map((c) => eventTaskMapper[c.cardId]);
+                    return n;
+                })
+                if (eventWeek.length > 0) {
+                    await eventweekCollection.insertMany(eventWeek);
+                }
+
+                //ScoreCard
+                const scorecardCollection = db.collection("Scorecard");
+                scorecard = scorecard.map((o: ScorecardType) => {
+                    let n = o as N_ScorecardType;
+                    n._id = scoreCardMapper[o.scorecardId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.kpiId = null;
+                    if (n.nonRecurringResults) {
+                        let _id = new ObjectID();
+                        kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        n.nonRecurringResults = _id;
+                    }
+                    if (n.recurringResults) {
+                        let _id = new ObjectID();
+                        kpiResultsCollection.insertOne({ ...n.recurringResults, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        n.recurringResults = _id;
+                    }
+                    return n;
+                })
+                if (scorecard.length > 0) {
+                    await scorecardCollection.insertMany(scorecard);
+                }
 
 
-                // //Migrate TemplateMetaData.
-                // const { coll: templateObject, ids: TemplateMetaDataMapper } = await readAndGenerateId<TemplateMetaDataType>(realm, "TemplateMetadata", "templateId");
-                // await asyncForEach(templateObject, async (template) => {
-                //     console.log(template.templateId)
-                //     //Persona
-                //     //brianstrom
-                //     //graph
-                //     //CardText
-                //     //Goal,
-                //     //Scorecard
-                //     //DataBox
-                //     //XMatrix
-                //     //TextGoal,
-                //     //General
-                //     //Action
-                //     //Settings
-                //     //Board
-                //     //Label                    
-                // })
+
+                //Goal
+                const goalCollection = db.collection("Goal");
+                goals = goals.map((o: GoalType) => {
+                    let n = o as N_GoalType;
+                    n._id = goalMapper[o.goalId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.kpiId = null;
+                    if (n.nonRecurringResults) {
+                        let _id = new ObjectID();
+                        kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        n.nonRecurringResults = _id;
+                    }
+                    if (n.recurringResults) {
+                        let _id = new ObjectID();
+                        kpiResultsCollection.insertOne({ ...n.recurringResults, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        n.recurringResults = _id;
+                    }
+                    if (n.kpiResults) {
+                        let _id = new ObjectID();
+                        kpiResultsCollection.insertOne({ ...n.kpiResults,  _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        n.kpiResults = _id;
+                    }
+                    if (n.magnet) {
+                        n.magnet = magnetsMapper[o.magnet.id];
+                    }
+                    if (n.postItId) {
+                        n.postItId = postItMapper[n.postItId.postItId]
+                    }
+                    if (n.zoneId) {
+                        n.zoneId = zoneMapper[n.zoneId.zoneId]
+                    }
+                    return n;
+                })
+                if (goals.length > 0) {
+                    await goalCollection.insertMany(goals);
+                }
+
+                //TemplateMetaData.
+                const templateCollection = db.collection("TemplateMetadata");
+                let { coll: templateObjects, ids: templateMetaDataMapper } = await readAndGenerateId<TemplateMetaDataType>(realm, "TemplateMetadata", "templateId");
+                templateObjects = templateObjects.map((o: TemplateMetaDataType) => {
+                    const n = o as N_TemplateMetaDataType;
+                    n._id = templateMetaDataMapper[o.templateId];
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n.brainstorms = o.brainstorms.map((b) => brainstormMapper[b.brainstormId]);
+                    n.graphs = o.graphs.map((g) => graphMapper[g.graphId]);
+                    n.cardTexts = o.cardTexts.map(c => cardTextMapper[c.cardTextId]);
+                    n.goalObjects = o.goalObjects.map((g) => goalMapper[g.goalId]);
+                    n.baselineMetricObjects = o.baselineMetricObjects.map((g) => goalMapper[g.goalId]);
+                    n.goalScorecardObjects = o.goalScorecardObjects.map(s => scoreCardMapper[s.scorecardId]);
+                    n.dataBoxes = o.dataBoxes.map((d) => dataBoxMapper[d.dataBoxId]);
+                    n.textGoals = o.textGoals.map(t => textGoalMapper[t.textGoalId]);
+                    n.generalObject = o.generalObject.map(g => generalMapper[g.generalId]);
+                    n.actions = o.actions.map(a => actionMapper[a.actionId]);
+                    if (n.settings) {
+                        n.settings = { ...o.settings, _id: new ObjectID() };
+                    }
+                    n.personas = o.personas.map((p) => personaMapper[p.personaId]);
+                    if (n.board) {
+                        n.board = boardMapper[o.board.boardId];
+                    }
+                    n.labelList = o.labelList.map((l) => labelMapper[l._id]);
+                    return n;
+                });
+                if (templateObjects.length > 0) {
+                    await templateCollection.insertMany(templateObjects);
+                }
+
+
+
+                const workshopCollection = db.collection("Workshop");
+                const idsCollection = idDb.collection('id');
+
+                let companiesMapper = await idsCollection.findOne({ type: "company", "user.id": user.id });
+                if (companiesMapper) {
+                    companiesMapper = companiesMapper.ids;
+                }
+                const o = workshopObject[0];
+                const n = workshopObject[0] as N_WorkshopType;
+
+                n._id = newWorkshopId,
+                    n._partition = `workshopRealm=${newWorkshopId}`;
+                if (companiesMapper) {
+                    n.company = companiesMapper[n.company];
+                }
+                n.participants = o.participants.map((p) => participantMapper[p.id]);
+                n.templates = o.templates.map((t) => templateMetaDataMapper[t.templateId]);
+                n.process = o.process.map(p => ({ ...p, _id: new ObjectID() }));
+                n.tables = o.tables.map((t) => {
+                    t.rows = t.rows.map((r) => {
+                        r.value = r.value.map((d) => ({ ...d, _id: new ObjectID() }));
+                        return { ...r, _id: new ObjectID() };
+                    })
+                    return { ...t, _id: ObjectID() };
+                })
+                n.workshopLocations = o.workshopLocations.map(l => {
+                    return { ...l, _id: new ObjectID() }
+                })
+                n.columns = o.columns.map((c) => preEventChecklistMapper[c.id]);
+                if (n.board) {
+                    n.board = boardMapper[o.board.boardId];
+                }
+                n.objectList = o.objectList.map((o) => metadataObjectMapper[o.objectId]);
+                if (n.nonRecurringKPITotals) {
+                    let _id = new ObjectID();
+                    kpiResultsCollection.insertOne({ ...n.nonRecurringKPITotals, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                    n.nonRecurringKPITotals = _id;
+                }
+                if (n.recurringKPITotals) {
+                    let _id = new ObjectID();
+                    kpiResultsCollection.insertOne({ ...n.recurringKPITotals, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                    n.recurringKPITotals = _id;
+                }
+                if (n.breakthrough) {
+                    const b = n.breakthrough;
+                    b.level0Metadata = b.level0Metadata.map((s: any) => ({ ...s, _id: new ObjectID() }))
+                    b.generalMetadata = b.generalMetadata.map((s: any) => ({ ...s, _id: new ObjectID() }))
+                    b.level1Metadata = b.level1Metadata.map((s: any) => ({ ...s, _id: new ObjectID() }))
+                    n.breakthrough = { ...b, _id: new ObjectID() }
+                }
+                n.labelList = o.labelList.map((l) => labelMapper[l._id]);
+                await workshopCollection.insertOne(n);
 
             } else {
                 logger.error(`Workshop ${workshopId} not found. So, Ignoring.`)

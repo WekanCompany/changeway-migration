@@ -3,7 +3,7 @@ import { RowType } from "./Row";
 export type TableType = {
 	tableId: string,
 	title: string,
-	rows: RowType
+	rows: RowType[]
 }
 
 export const Table = {

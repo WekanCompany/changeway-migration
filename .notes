@@ -1,0 +1,10 @@
+Company Schema =  KPI, Single Tempalte, Organization template needed to be migrated.
+Add _partition to KPIResults, KPI, Revenue, Formula.
+GoalSchema = KPIId, KPI & KPI Results rework.
+ScoreCardSchema=KPIId.
+SummaryPostIt=CardId.
+BoardCard= linkId
+Comment = commentId.
+
+//Workshop id missmatch on the participant users profile.
+//Company id also mismatch for the user Profile for the participants.

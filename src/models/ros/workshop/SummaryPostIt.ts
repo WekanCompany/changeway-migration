@@ -13,7 +13,7 @@ export type SummaryPostItType = {
 	visible: boolean,
 	deleted: boolean,
 	showInSummary: boolean,
-	cardId?: string
+	cardId?: string|null
 }
 
 export const SummaryPostIt = {

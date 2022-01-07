@@ -7,7 +7,7 @@ export type ScorecardType = {
 		metricName: string,
 		unitsGroup: string,
 		units: string,
-		kpiId: string,
+		kpiId: string|null,
 		nonRecurringResults: KPIResultsType,
 		recurringResults: KPIResultsType,
 		useSuffix: boolean,

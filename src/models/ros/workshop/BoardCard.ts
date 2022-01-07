@@ -2,7 +2,7 @@ import { BoardSettingsType } from "./BoardSettings";
 
 export type BoardCardType = {
 	cardId: string,
-	linkId?: string,
+	linkId?: string|null,
 	type: string,
 	order: number,
 	icon?: string,

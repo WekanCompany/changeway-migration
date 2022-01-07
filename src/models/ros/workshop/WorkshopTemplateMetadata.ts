@@ -39,7 +39,7 @@ export type TemplateMetaDataType = {
 	textGoals: TextGoalType[],
 	generalObject: GeneralType[],
 	actions: ActionType[],
-	settings: Settings,
+	settings: Settings|any,
 	templateLinker: TemplateLinkerType,
 	module?: string,
 	linkName?: string,

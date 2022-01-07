@@ -9,10 +9,10 @@ export type BoardZoneType = {
 	order: number,
 	information?: string,
 	cards: BoardCardType[],
-	settings: BoardSettingsType,
+	settings: BoardSettingsType | any,
 	singleFavourite: boolean,
 	singleBrainstorm: boolean,
-	linkages: BoardZoneLinkType[],
+	linkages: BoardZoneLinkType[]|any,
 	generated:boolean,
 	deleted: boolean
 }
