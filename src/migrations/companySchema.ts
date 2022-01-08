@@ -178,11 +178,11 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
 
             } else {
                 logger.error(`Company ${companyId} not found. So, Ignoring.`)
-                const ProfileCollection = db.collection("Profile");
+                // const ProfileCollection = db.collection("Profile");
                 
-                await ProfileCollection.updateOne(
-                    { _id: user.userProfile },
-                    { $pull: { companies: { _id: newCompanyId } } });
+                // await ProfileCollection.updateOne(
+                //     { _id: user.userProfile },
+                //     { $pull: { companies: { _id: newCompanyId } } });
             }
             resolve(true)
         } catch (e) {

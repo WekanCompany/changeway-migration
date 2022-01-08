@@ -6,7 +6,7 @@ import { N_ProfileType } from "../models/mongodb-realm/user/Profile";
 import { FileType } from "../models/ros/common/File";
 import { CompanyType } from "../models/ros/user/Company";
 import { ProfileType } from "../models/ros/user/Profile";
-import { omit, readRealm } from "../utils";
+import { asyncForEach, omit, readRealm } from "../utils";
 import { compact } from 'lodash';
 import { N_UserType } from "../models/mongodb-realm/user/User";
 var ObjectID = require("bson-objectid");
@@ -24,6 +24,8 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
             if (profiles && profiles.length > 0) {
                 let userProfile: N_ProfileType = profiles[0] as N_ProfileType;
                 const IDCollection = idDb.collection("id");
+                const workshopsIdCollection = idDb.collection('workshops');
+                const companyIdCollection = idDb.collection('companies');
                 //0) Add _id and _partition for the user Profile.
 
                 userProfile._id = new ObjectId()
@@ -58,9 +60,18 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
 
 
                 //2) Map Comapnies.
+                const companyIds = await companyIdCollection.find({}).toArray();
+                const newCompanyIds:any = []
                 userProfile.companies = userProfile.companies.map((c) => {
-                    const _id = new ObjectID();
-                    companyMapper[c.companyId] = _id;
+                    let _id = null;
+                    const existingCompanyId = companyIds.find((x:any) => x.uuid === c.companyId);
+                    if (existingCompanyId) {
+                        _id = existingCompanyId._id;
+                    } else {
+                        _id = new ObjectID();
+                        newCompanyIds.push({ uuid: c.companyId, _id });
+                    }
+                    companyMapper[c.companyId] = _id
                     c.url = `companyRealm=${_id}`
                     c.companyId = _id
                     if (c.logoFile) {
@@ -70,13 +81,24 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
                 });
 
                 //3) Map Workshop
-                userProfile.workshops = userProfile.workshops.map((w) => {
-                    const _id = new ObjectID();
+                const workshops: any = [];
+                const workshopIds = await workshopsIdCollection.find({}).toArray();
+                const newWorkshopIds:any = []
+                await asyncForEach(userProfile.workshops, async (w) => {
+                    let _id = null;
+                    const existingWorkshopId = workshopIds.find((x:any) => x.uuid === w.workshopId);
+                    if (existingWorkshopId) {
+                        _id = existingWorkshopId._id;
+                    } else {
+                        _id = new ObjectID();
+                        newWorkshopIds.push({ uuid: w.workshopId, _id });
+                    }
                     workshopMapper[w.workshopId] = _id;
                     w.workshopId = _id;
                     w.url = `workshopRealm=${_id}`
-                    return { ...w, _id };
+                    workshops.push({ ...w, _id });
                 });
+                userProfile.workshops = workshops;
                 //4) Map Tokens
                 userProfile.token = { ...userProfile.token, _id: new ObjectId() }
 
@@ -103,8 +125,10 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
                 }
                 const UserCollection = db.collection("User");
                 await UserCollection.insertOne(user);
-                await IDCollection.insertOne({ type: "company", ids: companyMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id} });
-                await IDCollection.insertOne({ type: "workshop", ids: workshopMapper, user: { id: oldUserId, _id: userObjectId , userProfile: userProfile._id} });
+                await IDCollection.insertOne({ type: "company", ids: companyMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id } });
+                await IDCollection.insertOne({ type: "workshop", ids: workshopMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id } });
+                await workshopsIdCollection.insertMany(newWorkshopIds);
+                await companyIdCollection.insertMany(newCompanyIds);
                 logger.info(`Migration completed for the user ${oldUserId}`)
 
             } else {
