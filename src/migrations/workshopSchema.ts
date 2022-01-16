@@ -75,10 +75,10 @@ import { N_WorkshopType } from "../models/mongodb-realm/workshop/Workshop";
 
 
 
-async function readAndGenerateId<T>(
+export async function readAndGenerateId<T>(
     realm: Realm,
     realmCollectionName: string,
-    idKey: string,
+    idKey: string | null,
 
 ): Promise<{ coll: T[], ids: any }> {
     let coll: T[] | null = await readRealm<T>(
@@ -89,7 +89,10 @@ async function readAndGenerateId<T>(
 
     if (coll) {
         coll.forEach((c: any) => {
-            idMapper[c[idKey]] = new ObjectID();
+            if (idKey) {
+                idMapper[c[idKey]] = new ObjectID();
+            }
+
         })
     } else {
         coll = []
@@ -98,12 +101,22 @@ async function readAndGenerateId<T>(
 }
 
 
-const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, realm: Realm, db: Db, logger: winston.Logger, idDb: Db) => {
+const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, realm: Realm, db: Db, logger: winston.Logger, idDb: Db, _partitionString?: string) => {
     return new Promise(async (resolve, reject) => {
         try {
-            logger.info(
-                `Migrating Workshop ${workshopId} for user ${user.id}.`
-            );
+            let _partition: string = "";
+            if (!_partitionString) {
+                _partition = `workshopRealm=${newWorkshopId}`
+                logger.info(
+                    `Migrating Workshop ${workshopId} for user ${user.id}.`
+                );
+            } else {
+                _partition = _partitionString
+                logger.info(
+                    `Migrating Workshop ${workshopId} for Everyday of everybay board ${newWorkshopId} for user ${user.id}.`
+                );
+            }
+
             const workshopObject = await readRealm<WorkshopType>(
                 realm,
                 "Workshop"
@@ -151,7 +164,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 files = files.map((o: FileType) => {
                     let n = o as N_FileType;
                     n._id = fileMapper[o.fileId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     return n;
                 })
                 if (files.length > 0) {
@@ -163,7 +176,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 graph = graph.map((o: GraphType) => {
                     let n = o as N_GraphType;
                     n._id = graphMapper[o.graphId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.allData = o.allData.map((a) => ({ ...a, _id: new ObjectID() }))
                     return n;
                 })
@@ -177,7 +190,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 dataBox = dataBox.map((o: DataBoxType) => {
                     let n = o as N_DataBoxType;
                     n._id = dataBoxMapper[o.dataBoxId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.rowsForBox = o.rowsForBox.map((x) => ({ ...x, _id: new ObjectID() }))
                     return n;
                 })
@@ -191,7 +204,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 board = board.map((o: BoardType) => {
                     let n = o as N_BoardType;
                     n._id = boardMapper[o.boardId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.checklist = o.checklist.map((c) => preEventChecklistMapper[c.id]);
                     n.columns = o.columns.map((c) => boardColumnMapper[c.columnId]);
                     return n;
@@ -205,7 +218,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 boardColumn = boardColumn.map((o: BoardColumnType) => {
                     let n = o as N_BoardColumnType;
                     n._id = boardColumnMapper[o.columnId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.zones = o.zones.map(z => boardZoneMapper[z.zoneId])
                     return n;
                 })
@@ -219,7 +232,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 boardZone = boardZone.map((o: BoardZoneType) => {
                     let n = o as N_BoardZoneType;
                     n._id = boardZoneMapper[o.zoneId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.cards = o.cards.map((x) => boardCardMapper[x.cardId]);
                     n.linkages = o.linkages.map((l: N_BoardZoneLinkType) => {
                         l._id = new ObjectID()
@@ -243,8 +256,8 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                                 _id: new ObjectID()
                             }
                         }
-                        settings.compositeTypes = n.settings.compositeTypes.map((y:any) => {
-                            y.cards = y.cards.map((c:any)=> ({...c, _id:new ObjectID()}))
+                        settings.compositeTypes = n.settings.compositeTypes.map((y: any) => {
+                            y.cards = y.cards.map((c: any) => ({ ...c, _id: new ObjectID() }))
                             return { ...y, _id: new ObjectID() }
                         })
                         n.settings = settings;
@@ -260,7 +273,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 general = general.map((o: GeneralType) => {
                     let n = o as N_GeneralType;
                     n._id = generalMapper[o.generalId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     if (n.card) {
                         n.card = boardCardMapper[o.card.cardId];
                     }
@@ -275,7 +288,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 cardText = cardText.map((o: CardTextType) => {
                     let n = o as N_CardTextType;
                     n._id = cardTextMapper[o.cardTextId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
 
                     return n;
                 })
@@ -288,7 +301,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 preEventChecklist = preEventChecklist.map((o: PreEventChecklistType) => {
                     let n = o as N_PreeventChecklistType;
                     n._id = preEventChecklistMapper[o.id];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.zones = o.zones.map((z) => eventWeekMapper[z.zoneId]);
                     return n;
                 })
@@ -302,7 +315,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 metadataObject = metadataObject.map((o: MetadataObjectType) => {
                     let n = o as N_MetaObjectType;
                     n._id = metadataObjectMapper[o.objectId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     return n;
                 })
                 if (metadataObject.length > 0) {
@@ -314,7 +327,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 compositeCard = compositeCard.map((o: CompositeCardType) => {
                     let n = o as N_CompositeCardType;
                     n._id = compositeCardMapper[o.compositeId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.linkId = null;
                     n.cards = o.cards.map((c) => boardCardMapper[c.cardId]);
                     return n;
@@ -328,7 +341,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 boardCard = boardCard.map((o: BoardCardType) => {
                     let n = o as N_BoardCardType;
                     n._id = boardCardMapper[o.cardId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.linkId = null;
                     if (n.settings) {
                         const settings: any = n.settings;
@@ -353,7 +366,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 zone = zone.map((o: ZoneType) => {
                     let n = o as N_ZoneType;
                     n._id = zoneMapper[o.zoneId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     if (n.backgroundImage) {
                         n.backgroundImage = fileMapper[o.backgroundImage.fileId];
                     }
@@ -372,7 +385,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 selects = selects.map((o: SelectType) => {
                     let n = o as N_SelectType;
                     n._id = selectMapper[o.selectId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     return n;
                 })
                 if (selects.length > 0) {
@@ -385,7 +398,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 await asyncForEach(actions, async (action: ActionType) => {
                     let newAction: N_ActionType = action as N_ActionType;
                     newAction._id = actionMapper[action.actionId];
-                    newAction._partition = `workshopRealm=${newWorkshopId}`;
+                    newAction._partition = _partition;
                     newAction.assignees = newAction.assignees.map((p) => participantMapper[p.id])
                     newAction = omit(["actionId"], newAction)
                     await actionCollection.insertOne(newAction);
@@ -395,7 +408,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 await asyncForEach(workshopParticipants, async (participant: WorkshopParticipantType) => {
                     let newParticipant: N_WorkshopParticipantType = participant as N_WorkshopParticipantType;
                     newParticipant._id = participantMapper[participant.id];
-                    newParticipant._partition = `workshopRealm=${newWorkshopId}`;
+                    newParticipant._partition = _partition;
                     newParticipant.actions = newParticipant.actions.map((a) => actionMapper[a.actionId])
                     newParticipant = omit(["id"], newParticipant)
                     await wParticipantCollection.insertOne(newParticipant);
@@ -406,7 +419,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 magnets = magnets.map((o: MagnetType) => {
                     let n = o as N_MagnetType;
                     n._id = magnetsMapper[o.id];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     return n;
                 })
                 if (magnets.length > 0) {
@@ -417,7 +430,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 textGoals = textGoals.map((o: TextGoalType) => {
                     let n = o as N_TextGoalType;
                     n._id = textGoalMapper[o.textGoalId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     return n;
                 })
                 if (textGoals.length > 0) {
@@ -428,7 +441,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 const l: any = label.map((o: LabelType) => {
                     let n = o as N_LabelType;
                     n._id = labelMapper[o._id];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     return n;
                 })
                 if (label.length > 0) {
@@ -440,7 +453,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 majorMinor = majorMinor.map((o: MajorMinorType) => {
                     let n = o as N_MajorMinorType;
                     n._id = majorMinorMapper[o.majorMinorId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.linkedGoalId = goalMapper[o.linkedGoalId];
                     return n;
                 })
@@ -453,7 +466,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 persona = persona.map((p: PersonaType) => {
                     let nP = p as N_PersonaType;
                     nP._id = personaMapper[p.personaId];
-                    nP._partition = `workshopRealm=${newWorkshopId}`;
+                    nP._partition = _partition;
                     nP.name = p.name.map((cT) => cardTextMapper[cT.cardTextId]);
                     nP.description = p.description.map((d) => brainstormMapper[d.brainstormId]);
                     nP.empathyMap = p.empathyMap.map(e => brainstormMapper[e.brainstormId]);
@@ -473,7 +486,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 brainstorm = brainstorm.map((b: BrainstormType) => {
                     let n = b as N_BrainstromType;
                     n._id = brainstormMapper[n.brainstormId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.postIts = b.postIts.map((p) => postItMapper[p.postItId]);
                     n.summaryPostIts = b.summaryPostIts.map((s) => summaryPostItMapper[s.postItId])
                     n.zones = b.zones.map((z) => zoneMapper[z.zoneId])
@@ -505,10 +518,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 postIt = postIt.map((o: PostItType) => {
                     let n = o as N_PostItType;
                     n._id = postItMapper[o.postItId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.list = o.list.map((l) => selectMapper[l.selectId]);
-                    if(n.link){
-                    n.link = {...o.link, _id: new ObjectID()}
+                    if (n.link) {
+                        n.link = { ...o.link, _id: new ObjectID() }
                     }
                     if (n.file) {
                         n.file = fileMapper[o.file.fileId];
@@ -543,7 +556,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 summaryPostIt = summaryPostIt.map((o: SummaryPostItType) => {
                     let n = o as N_SummaryPostItType;
                     n._id = summaryPostItMapper[o.postItId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.cardId = null;
                     if (n.zoneId) {
                         n.zoneId = zoneMapper[o.zoneId]
@@ -559,7 +572,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 comment = comment.map((o: CommentType) => {
                     let n = o as N_CommentType;
                     n._id = commentMapper[o.id];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.commentId = new ObjectID();
                     n.taskId = null;
                     if (n.userCommented) {
@@ -582,7 +595,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 eventTask = eventTask.map((o: EventTaskType) => {
                     let n = o as N_EventTaskType;
                     n._id = eventTaskMapper[o.cardId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     if (n.people) {
                         n.people = participantMapper[o.people.id];
                     }
@@ -600,7 +613,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 eventWeek = eventWeek.map((o: EventWeekType) => {
                     let n = o as N_EventWeekType;
                     n._id = eventWeekMapper[o.zoneId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.cards = o.cards.map((c) => eventTaskMapper[c.cardId]);
                     return n;
                 })
@@ -613,16 +626,16 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 scorecard = scorecard.map((o: ScorecardType) => {
                     let n = o as N_ScorecardType;
                     n._id = scoreCardMapper[o.scorecardId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.kpiId = null;
                     if (n.nonRecurringResults) {
                         let _id = new ObjectID();
-                        kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition: _partition, _id });
                         n.nonRecurringResults = _id;
                     }
                     if (n.recurringResults) {
                         let _id = new ObjectID();
-                        kpiResultsCollection.insertOne({ ...n.recurringResults, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        kpiResultsCollection.insertOne({ ...n.recurringResults, _partition: _partition, _id });
                         n.recurringResults = _id;
                     }
                     return n;
@@ -638,21 +651,21 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 goals = goals.map((o: GoalType) => {
                     let n = o as N_GoalType;
                     n._id = goalMapper[o.goalId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.kpiId = null;
                     if (n.nonRecurringResults) {
                         let _id = new ObjectID();
-                        kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition: _partition, _id });
                         n.nonRecurringResults = _id;
                     }
                     if (n.recurringResults) {
                         let _id = new ObjectID();
-                        kpiResultsCollection.insertOne({ ...n.recurringResults, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        kpiResultsCollection.insertOne({ ...n.recurringResults, _partition: _partition, _id });
                         n.recurringResults = _id;
                     }
                     if (n.kpiResults) {
                         let _id = new ObjectID();
-                        kpiResultsCollection.insertOne({ ...n.kpiResults,  _partition : `workshopRealm=${newWorkshopId}`, _id });
+                        kpiResultsCollection.insertOne({ ...n.kpiResults, _partition: _partition, _id });
                         n.kpiResults = _id;
                     }
                     if (n.magnet) {
@@ -676,7 +689,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 templateObjects = templateObjects.map((o: TemplateMetaDataType) => {
                     const n = o as N_TemplateMetaDataType;
                     n._id = templateMetaDataMapper[o.templateId];
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                     n.brainstorms = o.brainstorms.map((b) => brainstormMapper[b.brainstormId]);
                     n.graphs = o.graphs.map((g) => graphMapper[g.graphId]);
                     n.cardTexts = o.cardTexts.map(c => cardTextMapper[c.cardTextId]);
@@ -714,7 +727,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 const n = workshopObject[0] as N_WorkshopType;
 
                 n._id = newWorkshopId,
-                    n._partition = `workshopRealm=${newWorkshopId}`;
+                    n._partition = _partition;
                 if (companiesMapper) {
                     n.company = companiesMapper[n.company];
                 }
@@ -738,12 +751,12 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 n.objectList = o.objectList.map((o) => metadataObjectMapper[o.objectId]);
                 if (n.nonRecurringKPITotals) {
                     let _id = new ObjectID();
-                    kpiResultsCollection.insertOne({ ...n.nonRecurringKPITotals, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                    kpiResultsCollection.insertOne({ ...n.nonRecurringKPITotals, _partition: _partition, _id });
                     n.nonRecurringKPITotals = _id;
                 }
                 if (n.recurringKPITotals) {
                     let _id = new ObjectID();
-                    kpiResultsCollection.insertOne({ ...n.recurringKPITotals, _partition : `workshopRealm=${newWorkshopId}`, _id });
+                    kpiResultsCollection.insertOne({ ...n.recurringKPITotals, _partition: _partition, _id });
                     n.recurringKPITotals = _id;
                 }
                 if (n.breakthrough) {

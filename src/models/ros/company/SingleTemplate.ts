@@ -1,14 +1,15 @@
 import { LabelType } from "../common/Label";
 import { MagnetType } from "../common/Magnet";
 import { TemplateMetaDataType } from "../common/TemplateMetadata";
+import { TemplateDataType } from "./TemplateData";
 
 export type SingleTemplateType = {
 	singleTemplateId: string,
 	title: string,
-	// templateMetadata: TemplateMetaDataType,
+	templateMetadata: TemplateDataType | any,
 	order: number,
 	deleted: boolean,
-	templateId: string,
+	templateId?: string|null,
 	magnets: MagnetType[],
 	realmUrl: string,
 	labels: LabelType[]
@@ -20,7 +21,7 @@ export const SingleTemplate = {
 	properties: {
 		singleTemplateId: "string",
 		title: "string?",
-		// templateMetadata: "TemplateMetadata",
+		templateMetadata: "TemplateMetadata",
 		order: "int?",
 		deleted: { type: "bool", default: false },
 		templateId: "string?",

@@ -9,6 +9,7 @@ import { N_SettingsMetadataType } from "../models/mongodb-realm/common/SettingsM
 import { N_CompanyType } from "../models/mongodb-realm/company/Company";
 import { N_DivisionType } from "../models/mongodb-realm/company/Division";
 import { N_LocationType } from "../models/mongodb-realm/company/Location";
+import { N_SingleTemplateType } from "../models/mongodb-realm/company/SingleTemplate";
 import { N_WorkshopTemplateType } from "../models/mongodb-realm/company/WorkshopTemplate";
 import { FileType } from "../models/ros/common/File";
 import { CompanyType } from "../models/ros/company/Company";
@@ -28,12 +29,15 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                 "Company"
             );
 
+            const templateIDCollection = idDb.collection("templatesMetadata");
+            const templateIds = await templateIDCollection.find({}).toArray();
+            const workshopIDCollection = idDb.collection("workshops");
+            const workshopIds = await workshopIDCollection.find({}).toArray();
+
             if (companyObject && companyObject.length > 0) {
                 const company: N_CompanyType = companyObject[0] as N_CompanyType;
                 company._id = newCompanyId,
                     company._partition = company.companyUrl = `companyRealm=${newCompanyId}`
-
-                const companyCollection = db.collection("Company");
 
                 // Step1:
                 //Combine all the files and upload to Files.
@@ -64,11 +68,7 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                 }
                 company.logos = company.logos.map((x) => fileMapper[x.fileId])
 
-                // TODO Migrate KPI, Single Template and Workshop Template.
                 company.kpis = [];
-                company.singleTemplates = [];
-                company.workshopTemplates = [];
-
                 //Step 2: Participants.
                 const participants: any = [];
                 const participantCollection = db.collection("Participant");
@@ -173,13 +173,143 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                 })
                 company.organisationMetadata = metadatas;
 
+
+                //Step 7: Single Template: 
+                const singleTemplates: any = []
+                const singleTemplateCollection = db.collection("SingleTemplate");
+                const newTemplateIds: any = []
+                await asyncForEach(company.singleTemplates, async (singleTemplate) => {
+                    let newSingleTemplate: N_SingleTemplateType = {
+                        ...singleTemplate,
+                        _id: new ObjectID(),
+                        _partition: `companyRealm=${newCompanyId}`
+                    }
+                    newSingleTemplate.templateId = null;
+                    if (newSingleTemplate.templateMetadata) {
+                        let _id = null;
+                        const existingTemplateId = templateIds.find((x: any) => x.uuid === newSingleTemplate.templateMetadata.templateId);
+                        const realmUrls = newSingleTemplate.realmUrl.split("/");
+                        
+                        if (realmUrls.length > 0) {
+                            const workShopUUID = realmUrls.pop();
+                            const existingWorkshopId = workshopIds.find((x: any) => x.uuid === workShopUUID);
+                            if (existingWorkshopId) {
+                                newSingleTemplate.realmUrl = `workshopRealm=${existingWorkshopId}`
+                            }
+                        }
+                        if (existingTemplateId) {
+                            _id = existingTemplateId._id;
+                        } else {
+                            _id = new ObjectID();
+                            newTemplateIds.push({ uuid: newSingleTemplate.templateMetadata.templateId, _id });
+                        }
+                        if(!newSingleTemplate.templateMetadata.visualName){
+                            newSingleTemplate.templateMetadata.visualName = "";
+                        }
+                        newSingleTemplate.templateMetadata = {
+                            ...newSingleTemplate.templateMetadata,
+                            _id
+                        }
+                        delete newSingleTemplate.templateMetadata.templateId;
+                    }
+                    newSingleTemplate = omit(["singleTemplateId"], newSingleTemplate);
+                    await singleTemplateCollection.insertOne(newSingleTemplate);
+                    singleTemplates.push(newSingleTemplate._id);
+                })
+                company.singleTemplates = singleTemplates;
+
+
+                //Step 8: Workshop Templates
+                const workshopTemplates: any = []
+                const workshopTemplateCollection = db.collection("WorkshopTemplate");
+                await asyncForEach(company.workshopTemplates, async (workshopTemplate) => {
+                    let newTemplate: N_WorkshopTemplateType = {
+                        ...workshopTemplate,
+                        _id: new ObjectID(),
+                        _partition: `companyRealm=${newCompanyId}`
+                    }
+                    newTemplate.workshopId = null;
+                    const realmUrls = workshopTemplate.realmUrl.split("/");
+                    if (realmUrls.length > 0) {
+                        const workShopUUID = realmUrls.pop();
+                        const existingWorkshopId = workshopIds.find((x: any) => x.uuid === workShopUUID);
+                        if (existingWorkshopId) {
+                            workshopTemplate.realmUrl = `workshopRealm=${existingWorkshopId}`
+                        }
+                    }
+                    
+                    newTemplate.templates = newTemplate.templates.map((t) => {
+                        let _id = null;
+                        const existingTemplateId = templateIds.find((x: any) => x.uuid === t.templateId);
+                        if (existingTemplateId) {
+                            _id = existingTemplateId._id;
+                        } else {
+                            _id = new ObjectID();
+                            newTemplateIds.push({ uuid: t.templateId, _id });
+                        }
+                        if(!t.visualName){
+                            t.visualName = "";
+                        }
+                        delete t.templateId;
+                        return {...t, _id};
+                    });
+
+                    newTemplate = omit(["workshopTemplateId"], newTemplate);
+                    await workshopTemplateCollection.insertOne(newTemplate);
+                    workshopTemplates.push(newTemplate._id);
+                })
+             
+
+                // Step 9 KPI's
+                const kpis: any = []
+                // const  KPICollection = db.collection("KPI");
+                // await asyncForEach(company.workshopTemplates, async (workshopTemplate) => {
+                //     let newTemplate: N_WorkshopTemplateType = {
+                //         ...workshopTemplate,
+                //         _id: new ObjectID(),
+                //         _partition: `companyRealm=${newCompanyId}`
+                //     }
+                //     const realmUrls = workshopTemplate.realmUrl.split("/");
+                //     if (realmUrls.length > 0) {
+                //         const workShopUUID = realmUrls.pop();
+                //         const existingWorkshopId = workshopIds.find((x: any) => x.uuid === workShopUUID);
+                //         if (existingWorkshopId) {
+                //             workshopTemplate.realmUrl = `workshopRealm=${existingWorkshopId}`
+                //         }
+                //     }
+
+
+                //     newTemplate.templates = newTemplate.templates.map((t) => {
+                //         let _id = null;
+                //         const existingTemplateId = templateIds.find((x: any) => x.uuid === t.templateId);
+                //         if (existingTemplateId) {
+                //             _id = existingTemplateId._id;
+                //         } else {
+                //             _id = new ObjectID();
+                //             newTemplateIds.push({ uuid: t.templateId, _id });
+                //         }
+                //         delete t.templateId;
+                //         return t;
+                //     });
+
+                //     newTemplate = omit(["workshopTemplateId"], newTemplate);
+                //     await workshopTemplateCollection.insertOne(newTemplate);
+                //     workshopTemplates.push(newTemplate._id);
+                // })
+                
+                company.workshopTemplates = workshopTemplates;
+                if (newTemplateIds.length > 0) {
+                    await templateIDCollection.insertMany(newTemplateIds)
+                }
+                const companyCollection = db.collection("Company");
+
                 //Insert the Company.
                 await companyCollection.insertOne(company);
 
             } else {
                 logger.error(`Company ${companyId} not found. So, Ignoring.`)
                 // const ProfileCollection = db.collection("Profile");
-                
+
                 // await ProfileCollection.updateOne(
                 //     { _id: user.userProfile },
                 //     { $pull: { companies: { _id: newCompanyId } } });

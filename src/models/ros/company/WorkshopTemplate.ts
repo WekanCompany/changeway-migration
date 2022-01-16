@@ -1,7 +1,7 @@
 import { FileType } from "../common/File";
 import { LabelType } from "../common/Label";
 import { MagnetType } from "../common/Magnet";
-import { TemplateMetaDataType } from "../common/TemplateMetadata";
+import { TemplateDataType } from "./TemplateData";
 
 export type WorkshopTemplateType = {
 	workshopTemplateId: string;
@@ -9,10 +9,10 @@ export type WorkshopTemplateType = {
 	order: number;
 	deleted: boolean;
 	files: FileType[];
-	workshopId: string;
+	workshopId?: string|null;
 	magnets: MagnetType[];
 	realmUrl: string;
-	templates: TemplateMetaDataType[];
+	templates: TemplateDataType[];
 	labels: LabelType[];
 }
 
@@ -28,7 +28,7 @@ export const WorkshopTemplate = {
 		workshopId: "string?",
 		magnets: "Magnet[]",
 		realmUrl: "string",
-		// templates: "TemplateMetadata[]?",
+		templates: "TemplateMetadata[]",
 		labels: "Label[]"
 	}
 };

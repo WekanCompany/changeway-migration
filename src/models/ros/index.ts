@@ -85,6 +85,24 @@ import { Select } from "./common/Select";
 import { Table } from "./common/Table";
 import { Scorecard } from "./common/Scorecard";
 import { Contact } from "./common/Contact";
+import { TemplateData } from "./company/TemplateData";
+import { Config } from "./everyday/Config";
+import { DailyData } from "./everyday/DailyData";
+import { Dimension } from "./everyday/Dimension";
+import { EverydayBoard } from "./everyday/EverydayBoard";
+import { EverydayBoardInstructions } from "./everyday/EverydayBoardInstructions";
+import { EverydayLevel } from "./everyday/EverydayLevel";
+import { GraphSettings } from "./everyday/GraphSettings";
+import { LineManager } from "./everyday/LineManager";
+import { MissIssue } from "./everyday/MissIssue";
+import { MissReason } from "./everyday/MissReason";
+import { MonthlyData } from "./everyday/MonthlyData";
+import { ParetoOfGaps } from "./everyday/ParetoOfGaps";
+import { Plan } from "./everyday/Plan";
+import { PlanValues } from "./everyday/PlanValues";
+import { ReasonForMiss } from "./everyday/ReasonForMiss";
+import { ShiftTiming } from "./everyday/ShiftTiming";
+import { UserBoardList } from "./everyday/UserBoardList";
 
 
 
@@ -118,6 +136,7 @@ export const CompanySchema = [
     Location,
     SingleTemplate,
     WorkshopTemplate,
+    TemplateData,
 ];
 
 export const WorkshopSchema = [
@@ -187,3 +206,31 @@ export const WorkshopSchema = [
     Scorecard,
     Contact
 ];
+
+export const EverydaySchema = [
+    Config,
+    DailyData,
+    Dimension,
+    EverydayBoard,
+    EverydayBoardInstructions,
+    EverydayLevel,
+    GraphSettings,
+    LineManager,
+    MissIssue,
+    MissReason,
+    MonthlyData,
+    ParetoOfGaps,
+    Plan,
+    PlanValues,
+    ReasonForMiss,
+    ShiftTiming,
+    UserBoardList,
+    File,
+    Participant,
+    EventTask,
+    Comment,
+    Reaction,
+    Label
+];
+
+
