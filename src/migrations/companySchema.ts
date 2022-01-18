@@ -3,8 +3,11 @@ import { Db } from "mongodb"
 import winston from "winston"
 import { N_ColourPaletteType } from "../models/mongodb-realm/common/ColourPalette";
 import { N_FileType } from "../models/mongodb-realm/common/File";
+import { N_FormulaType } from "../models/mongodb-realm/common/Formula";
+import { N_KPIType } from "../models/mongodb-realm/common/KPI";
 import { N_MagnetType } from "../models/mongodb-realm/common/Magnet";
 import { N_ParticipantType } from "../models/mongodb-realm/common/Participant";
+import { N_RevenueType } from "../models/mongodb-realm/common/Revenue";
 import { N_SettingsMetadataType } from "../models/mongodb-realm/common/SettingsMetadata";
 import { N_CompanyType } from "../models/mongodb-realm/company/Company";
 import { N_DivisionType } from "../models/mongodb-realm/company/Division";
@@ -12,6 +15,7 @@ import { N_LocationType } from "../models/mongodb-realm/company/Location";
 import { N_SingleTemplateType } from "../models/mongodb-realm/company/SingleTemplate";
 import { N_WorkshopTemplateType } from "../models/mongodb-realm/company/WorkshopTemplate";
 import { FileType } from "../models/ros/common/File";
+import { KPIType } from "../models/ros/common/KPI";
 import { CompanyType } from "../models/ros/company/Company";
 import { DivisionType } from "../models/ros/company/Division";
 import { WorkshopTemplateType } from "../models/ros/company/WorkshopTemplate";
@@ -68,7 +72,58 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                 }
                 company.logos = company.logos.map((x) => fileMapper[x.fileId])
 
-                company.kpis = [];
+                // company.kpis = [];
+
+                const RevenueCollection = db.collection("Revenue");
+                const KPICollection = db.collection("KPI");
+                const kpis:any = [];
+                await asyncForEach(company.kpis, async (kpi: any) => {
+                   
+                    //transform Recurring Revenue
+                    if (kpi.recurring) {
+                        const _id = new ObjectID()
+                        let recurring = kpi.recurring as N_RevenueType;
+                        recurring._id = _id
+                        recurring._partition =`companyRealm=${newCompanyId}`;
+                        recurring = omit(["id"], recurring);
+                        if (recurring.formula) {
+                            const _id = new ObjectID();
+                            let formula = recurring.formula as N_FormulaType;
+                            formula._id = _id;
+                            formula = omit(["id"], formula);
+                            recurring.formula = formula;
+                        }
+                        await RevenueCollection.insertOne(recurring);
+                        kpi.recurring = _id;
+                    }
+                    //transform Non Recurring Revenue
+                    if (kpi.nonRecurring) {
+                        const _id = new ObjectID()
+                        let nonRecurring = kpi.nonRecurring as N_RevenueType;
+                        nonRecurring._id = _id
+                        nonRecurring._partition = `companyRealm=${newCompanyId}`;
+                        nonRecurring = omit(["id"], nonRecurring);
+                        if (nonRecurring.formula) {
+                            const _id = new ObjectID();
+                            let formula = nonRecurring.formula as N_FormulaType;
+                            formula._id = _id;
+                            formula = omit(["id"], formula);
+                            nonRecurring.formula = formula;
+                        }
+                        await RevenueCollection.insertOne(nonRecurring);
+                        kpi.nonRecurring = _id;
+                    }
+                    kpi._id = new ObjectID();
+                    kpi = omit(["id"], kpi);
+                    kpi._partition = `companyRealm=${newCompanyId}`
+                    kpis.push(kpi._id);
+                    await KPICollection.insertOne(kpi);
+                });
+
+
+                company.kpis = kpis;
+
+
                 //Step 2: Participants.
                 const participants: any = [];
                 const participantCollection = db.collection("Participant");
@@ -258,45 +313,7 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     await workshopTemplateCollection.insertOne(newTemplate);
                     workshopTemplates.push(newTemplate._id);
                 })
-             
-
-                // Step 9 KPI's
-                const kpis: any = []
-                // const  KPICollection = db.collection("KPI");
-                // await asyncForEach(company.workshopTemplates, async (workshopTemplate) => {
-                //     let newTemplate: N_WorkshopTemplateType = {
-                //         ...workshopTemplate,
-                //         _id: new ObjectID(),
-                //         _partition: `companyRealm=${newCompanyId}`
-                //     }
-                //     const realmUrls = workshopTemplate.realmUrl.split("/");
-                //     if (realmUrls.length > 0) {
-                //         const workShopUUID = realmUrls.pop();
-                //         const existingWorkshopId = workshopIds.find((x: any) => x.uuid === workShopUUID);
-                //         if (existingWorkshopId) {
-                //             workshopTemplate.realmUrl = `workshopRealm=${existingWorkshopId}`
-                //         }
-                //     }
-
-
-                //     newTemplate.templates = newTemplate.templates.map((t) => {
-                //         let _id = null;
-                //         const existingTemplateId = templateIds.find((x: any) => x.uuid === t.templateId);
-                //         if (existingTemplateId) {
-                //             _id = existingTemplateId._id;
-                //         } else {
-                //             _id = new ObjectID();
-                //             newTemplateIds.push({ uuid: t.templateId, _id });
-                //         }
-                //         delete t.templateId;
-                //         return t;
-                //     });
-
-                //     newTemplate = omit(["workshopTemplateId"], newTemplate);
-                //     await workshopTemplateCollection.insertOne(newTemplate);
-                //     workshopTemplates.push(newTemplate._id);
-                // })
-                
+                             
                 company.workshopTemplates = workshopTemplates;
                 if (newTemplateIds.length > 0) {
                     await templateIDCollection.insertMany(newTemplateIds)

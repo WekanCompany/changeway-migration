@@ -17,7 +17,7 @@ import { XMatrixTriangleType } from "../models/ros/workshop/XMatrixTriangle";
 import { XMatrixGoalType } from "../models/ros/workshop/XMatrixGoal";
 import { MajorMinorType } from "../models/ros/workshop/MajorMinor";
 import { BrainstormType } from "../models/ros/workshop/Brainstorm";
-import { PostItType } from "../models/ros/workshop/PostIt";
+import { PostIt, PostItType } from "../models/ros/workshop/PostIt";
 import { ZoneType } from "../models/ros/workshop/Zone";
 import { DataBoxType } from "../models/ros/workshop/DataBox";
 import { BoardType } from "../models/ros/workshop/Board";
@@ -72,6 +72,7 @@ import { N_TemplateMetaDataType } from "../models/mongodb-realm/workshop/Templat
 import { ScorecardType } from "../models/ros/common/Scorecard";
 import { N_ScorecardType } from "../models/mongodb-realm/common/Scorecard";
 import { N_WorkshopType } from "../models/mongodb-realm/workshop/Workshop";
+
 
 
 
@@ -155,10 +156,84 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 let { coll: goals, ids: goalMapper } = await readAndGenerateId<GoalType>(realm, "Goal", "goalId");
                 let { coll: selects, ids: selectMapper } = await readAndGenerateId<SelectType>(realm, "Select", "selectId");
                 let { coll: scorecard, ids: scoreCardMapper } = await readAndGenerateId<ScorecardType>(realm, "Scorecard", "scorecardId");
+
+
+
+                const mapLinkId = (type: string, id: any): any => {
+                    let _id: any = null;
+                    if (id) {
+                        switch (type) {
+                            case "Chart":
+                                _id = graphMapper[id] || null;
+                                break;
+                            case "Improvement Theme Text":
+                                break;
+                            case "Baseline Metric":
+                                _id = goalMapper[id] || null;;
+                                break;
+                            case "Improvement Theme Brainstorm":
+                                break;
+                            case "Brainstorm Card List":
+                                _id = zoneMapper[id] || null;
+                                break;
+                            case "Persona Hill Statement":
+                            case "Persona Empathy Map":
+                            case "Persona":
+                                _id = personaMapper[id] || null;
+                                break;
+                            case "Summary Text":
+                                break;
+                            case "Table":
+                                _id = dataBoxMapper[id] || null;
+                                break;
+                            case "Image":
+                                _id = fileMapper[id] || null;
+                                break;
+                            case "Goal Slider Actual":
+                                break;
+                            case "Goal Slider Aim":
+                                break;
+                            case "Text Goal Aim":
+                            case "Text Goal Actual":
+                            case "Text Goal":
+                                _id = textGoalMapper[id] || null;
+                                break;
+                            case "Composite Card":
+                                _id = compositeCardMapper[id] || null;
+                                break;
+                            case "Action":
+                                _id = actionMapper[id] || null;
+                                break;
+
+                            case "General Card":
+                                _id = generalMapper[id] || null;
+                                break;
+                            case "Text":
+                                _id = cardTextMapper[id] || null;
+                                break;
+                            case "Brainstorm Item":
+                                _id = postItMapper[id] || null;
+                                if (!_id) {
+                                    _id = goalMapper[id] || null;
+                                }
+                                break;
+                            case "Goal Scorecard Run-Rate":
+                            case "Goal Scorecard Run-Rate Achieve":
+                            case "Goal Scorecard Cumulative":
+                            case "Goal Scorecard Achieve":
+                                _id = scoreCardMapper[id] || null;;
+                                break;
+
+                            case "Brainstorm":
+                                break;
+                        }
+                    }
+                    return _id;
+                }
+
+
+
                 const kpiResultsCollection = db.collection("KPIResults");
-
-
-
                 //Files
                 const fileCollection = db.collection("File");
                 files = files.map((o: FileType) => {
@@ -342,7 +417,8 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_BoardCardType;
                     n._id = boardCardMapper[o.cardId];
                     n._partition = _partition;
-                    n.linkId = null;
+                    n.linkId = mapLinkId(n.type, n.linkId);
+
                     if (n.settings) {
                         const settings: any = n.settings;
                         settings._id = new ObjectID();
@@ -557,7 +633,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_SummaryPostItType;
                     n._id = summaryPostItMapper[o.postItId];
                     n._partition = _partition;
-                    n.cardId = null;
+                    n.cardId = n.cardId ? boardCardMapper[n.cardId] : null;
                     if (n.zoneId) {
                         n.zoneId = zoneMapper[o.zoneId]
                     }
