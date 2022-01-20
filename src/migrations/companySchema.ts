@@ -321,7 +321,12 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                 const companyCollection = db.collection("Company");
 
                 //Insert the Company.
-                await companyCollection.insertOne(company);
+                try{
+                    await companyCollection.insertOne(company);
+                }catch(e){
+                    console.log("Error Inserting the company");
+                }
+                
 
             } else {
                 logger.error(`Company ${companyId} not found. So, Ignoring.`)

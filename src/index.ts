@@ -61,7 +61,7 @@ const userIDRunner = async () => {
     if (User) {
       User.forEach((user: any) => {
         const { userId }: any = user;
-        if (userId === "auth0|5e70a6d23119a80c87e2d085" || userId === "auth0|6095329d449d2a0068d829ef") {
+        if (userId === "auth0|5e70a6d23119a80c87e2d085" || userId === "auth0|6095329d449d2a0068d829ef" ||userId === "auth0|5e70a715c190f70c8ab66ce7" ) {
           userIds[userId] = new ObjectID();
         }
       });
@@ -147,15 +147,15 @@ const migrate = async () => {
         logger.info(
           `Migration of Global KPI: realms://${realmServerUrl}/GlobalKPI`
         );
-        const globalKPI: any = await openRealm(
-          user,
-          `realms://${realmServerUrl}/GlobalKPI`,
-          GlobalKPI,
-          logger
-        );
-        if (globalKPI) {
-          await MigrateGlobalKPI(globalKPI, db, logger, idDB);
-        }
+        // const globalKPI: any = await openRealm(
+        //   user,
+        //   `realms://${realmServerUrl}/GlobalKPI`,
+        //   GlobalKPI,
+        //   logger
+        // );
+        // if (globalKPI) {
+        //   await MigrateGlobalKPI(globalKPI, db, logger, idDB);
+        // }
 
 
         // Step 5.
@@ -165,15 +165,15 @@ const migrate = async () => {
         logger.info(
           `Migration Global User and Notifications from path: realms://${realmServerUrl}/GlobalUserAndNotification`
         );
-        const globalUserRealm: any = await openRealm(
-          user,
-          `realms://${realmServerUrl}/GlobalUserAndNotification`,
-          GlobalUserAndNotification,
-          logger
-        );
-        if (globalUserRealm) {
-          await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
-        }
+        // const globalUserRealm: any = await openRealm(
+        //   user,
+        //   `realms://${realmServerUrl}/GlobalUserAndNotification`,
+        //   GlobalUserAndNotification,
+        //   logger
+        // );
+        // if (globalUserRealm) {
+        //   await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
+        // }
 
         // Step 6.
         /**
@@ -240,37 +240,40 @@ const migrate = async () => {
          */
         const workshops = await idCol.find({ type: "workshop" }).toArray();
         logger.info(
-          `Migrating totally ${workshops.length} Workshops.`
+          `Migrating totally ${workshops.length} User's Workshops.`
         );
 
         await asyncForEach(workshops, async (workshop) => {
-          if (workshop.user.id !== "auth0|6095329d449d2a0068d829ef") {
-            return
-          }
+         
+          // if (["auth0|6095329d449d2a0068d829ef","auth0|5e70a715c190f70c8ab66ce7"].indexOf(workshop.user.id) === -1) {
+          //   return
+          // }else{
+            
+          // }
           let ids = workshop.ids;
-          ids = Object.keys(ids);
-          await asyncForEach(ids, async (workshopId: string) => {
-            if (workshopId !== "5762fc36-7f1b-436a-8a65-74dc53f3c6b2") {
-              return
-            }
-            try {
-              // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
-              const workshopRealm = await openRealm(
-                user,
-                `realms://${realmServerUrl}/${workshop.user.id.replace("|", "_")}/workshop/${workshopId}`,
-                WorkshopSchema,
-                logger,
-              );
-              if (workshopRealm) {
-                await MigrateWorkshopSchemas(workshopId, workshop.ids[workshopId], workshop.user, workshopRealm, db, logger, idDB)
-                workshopRealm.close()
+            ids = Object.keys(ids);
+            await asyncForEach(ids, async (workshopId: string) => {
+             
+              if ( ["2de0fd49-59ee-4172-ad50-096507abdd24","5762fc36-7f1b-436a-8a65-74dc53f3c6b2","58c788d8-57a3-4f9c-b16b-472c346147dd"].indexOf(workshopId) === -1 ) {
+                return
               }
-            } catch (e) {
-              console.log(e);
-              reject(e);
-            }
-          });
-
+              try {
+                // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
+                const workshopRealm = await openRealm(
+                  user,
+                  `realms://${realmServerUrl}/${workshop.user.id.replace("|", "_")}/workshop/${workshopId}`,
+                  WorkshopSchema,
+                  logger,
+                );
+                if (workshopRealm) {
+                  await MigrateWorkshopSchemas(workshopId, workshop.ids[workshopId], workshop.user, workshopRealm, db, logger, idDB)
+                  workshopRealm.close()
+                }
+              } catch (e) {
+                console.log(e);
+                reject(e);
+              }
+            });
         });
 
 

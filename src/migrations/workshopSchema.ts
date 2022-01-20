@@ -1,4 +1,4 @@
-import { compact } from "lodash";
+import { compact, iteratee } from "lodash";
 import { Db } from "mongodb"
 import winston from "winston"
 import { WorkshopType } from "../models/ros/workshop/Workshop";
@@ -14,7 +14,7 @@ import { MagnetType } from "../models/ros/common/Magnet";
 import { LabelType } from "../models/ros/common/Label";
 import { XMatrixType } from "../models/ros/workshop/XMatrix";
 import { XMatrixTriangleType } from "../models/ros/workshop/XMatrixTriangle";
-import { XMatrixGoalType } from "../models/ros/workshop/XMatrixGoal";
+import { XMatrixGoal, XMatrixGoalType } from "../models/ros/workshop/XMatrixGoal";
 import { MajorMinorType } from "../models/ros/workshop/MajorMinor";
 import { BrainstormType } from "../models/ros/workshop/Brainstorm";
 import { PostIt, PostItType } from "../models/ros/workshop/PostIt";
@@ -72,6 +72,9 @@ import { N_TemplateMetaDataType } from "../models/mongodb-realm/workshop/Templat
 import { ScorecardType } from "../models/ros/common/Scorecard";
 import { N_ScorecardType } from "../models/mongodb-realm/common/Scorecard";
 import { N_WorkshopType } from "../models/mongodb-realm/workshop/Workshop";
+import { KPIType } from "../models/ros/common/KPI";
+import { N_RevenueType } from "../models/mongodb-realm/common/Revenue";
+import { N_FormulaType } from "../models/mongodb-realm/common/Formula";
 
 
 
@@ -129,9 +132,9 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 let { coll: textGoals, ids: textGoalMapper } = await readAndGenerateId<TextGoalType>(realm, "TextGoal", "textGoalId")
                 let { coll: magnets, ids: magnetsMapper } = await readAndGenerateId<MagnetType>(realm, "Magnet", "id");
                 let { coll: label, ids: labelMapper } = await readAndGenerateId<LabelType>(realm, "Label", "_id");
-                const { coll: xMatrixs, ids: xMatricMapper } = await readAndGenerateId<XMatrixType>(realm, "XMatrix", "xMatrixId");
-                const { coll: xMatrixTriangles, ids: XMatrixTriangleMapper } = await readAndGenerateId<XMatrixTriangleType>(realm, "XMatrixTriangle", "xMatrixTriangleId");
-                const { coll: XMatrixGoals, ids: XMatrixGoalMapper } = await readAndGenerateId<XMatrixGoalType>(realm, "XMatrixGoal", "xMatrixGoalId");
+                let { coll: xMatrixs, ids: xMatricMapper } = await readAndGenerateId<XMatrixType>(realm, "XMatrix", "xMatrixId");
+                let { coll: xMatrixTriangles, ids: XMatrixTriangleMapper } = await readAndGenerateId<XMatrixTriangleType>(realm, "XMatrixTriangle", "xMatrixTriangleId");
+                let { coll: XMatrixGoals, ids: XMatrixGoalMapper } = await readAndGenerateId<XMatrixGoalType>(realm, "XMatrixGoal", "xMatrixGoalId");
                 let { coll: majorMinor, ids: majorMinorMapper } = await readAndGenerateId<MajorMinorType>(realm, "MajorMinor", "majorMinorId");
                 let { coll: brainstorm, ids: brainstormMapper } = await readAndGenerateId<BrainstormType>(realm, "Brainstorm", "brainstormId");
                 let { coll: postIt, ids: postItMapper } = await readAndGenerateId<PostItType>(realm, "PostIt", "postItId");
@@ -156,9 +159,46 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 let { coll: goals, ids: goalMapper } = await readAndGenerateId<GoalType>(realm, "Goal", "goalId");
                 let { coll: selects, ids: selectMapper } = await readAndGenerateId<SelectType>(realm, "Select", "selectId");
                 let { coll: scorecard, ids: scoreCardMapper } = await readAndGenerateId<ScorecardType>(realm, "Scorecard", "scorecardId");
+                let { coll: kpiList, ids: KPIMapper } = await readAndGenerateId<KPIType>(realm, "KPI", "id");
+                let { coll: templateObjects, ids: templateMetaDataMapper } = await readAndGenerateId<TemplateMetaDataType>(realm, "TemplateMetadata", "templateId");
+                //Composite Card 
+                const allIds = {
+                    ...actionMapper,
+                    ...participantMapper,
+                    ...textGoalMapper,
+                    ...magnetsMapper,
+                    ...labelMapper,
+                    ...xMatricMapper,
+                    ...XMatrixTriangleMapper,
+                    ...XMatrixGoalMapper,
+                    ...majorMinorMapper,
+                    ...brainstormMapper,
+                    ...postItMapper,
+                    ...zoneMapper,
+                    ...dataBoxMapper,
+                    ...boardMapper,
+                    ...boardColumnMapper,
+                    ...templateMetaDataMapper,
+                    ...KPIMapper,
+                    ...scoreCardMapper,
+                    ...selectMapper,
+                    ...goalMapper,
+                    ...fileMapper,
+                    ...generalMapper,
+                    ...compositeCardMapper,
+                    ...personaMapper,
+                    ...commentMapper,
+                    ...eventTaskMapper,
+                    ...eventWeekMapper,
+                    ...preEventChecklistMapper,
+                    ...graphMapper,
+                    ...summaryPostItMapper,
+                    ...cardTextMapper,
+                    ...boardCardMapper,
+                    ...boardZoneMapper
+                };
 
-
-
+                //BoardCard
                 const mapLinkId = (type: string, id: any): any => {
                     let _id: any = null;
                     if (id) {
@@ -167,11 +207,20 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                                 _id = graphMapper[id] || null;
                                 break;
                             case "Improvement Theme Text":
+                            case "Summary Text":
+                                _id = cardTextMapper[id] || null;
                                 break;
                             case "Baseline Metric":
                                 _id = goalMapper[id] || null;;
                                 break;
                             case "Improvement Theme Brainstorm":
+                                _id = brainstormMapper[id] || null;
+                                break;
+                            case "Brainstorm":
+                                _id = brainstormMapper[id]
+                                if (!_id) {
+                                    _id = zoneMapper[id] || null;
+                                }
                                 break;
                             case "Brainstorm Card List":
                                 _id = zoneMapper[id] || null;
@@ -181,8 +230,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                             case "Persona":
                                 _id = personaMapper[id] || null;
                                 break;
-                            case "Summary Text":
-                                break;
+
                             case "Table":
                                 _id = dataBoxMapper[id] || null;
                                 break;
@@ -190,8 +238,8 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                                 _id = fileMapper[id] || null;
                                 break;
                             case "Goal Slider Actual":
-                                break;
                             case "Goal Slider Aim":
+                                _id = goalMapper[id] || null;
                                 break;
                             case "Text Goal Aim":
                             case "Text Goal Actual":
@@ -199,7 +247,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                                 _id = textGoalMapper[id] || null;
                                 break;
                             case "Composite Card":
-                                _id = compositeCardMapper[id] || null;
+                                _id = boardCardMapper[id] || null;
                                 break;
                             case "Action":
                                 _id = actionMapper[id] || null;
@@ -221,11 +269,18 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                             case "Goal Scorecard Run-Rate Achieve":
                             case "Goal Scorecard Cumulative":
                             case "Goal Scorecard Achieve":
-                                _id = scoreCardMapper[id] || null;;
+                                _id = scoreCardMapper[id] || null;
                                 break;
 
-                            case "Brainstorm":
+                            case "Summary Box Product":
+                            case "Summary Box Info":
+                                _id = brainstormMapper[id] || null;
                                 break;
+
+                            case "xMatrix":
+                                _id = xMatricMapper[id]||null;
+                                break;
+
                         }
                     }
                     return _id;
@@ -257,6 +312,127 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 })
                 if (graph.length > 0) {
                     await graphColl.insertMany(graph);
+                }
+
+                //KPI
+                const RevenueCollection = db.collection("Revenue");
+                const KPICollection = db.collection("KPI");
+                const kpis: any = [];
+                await asyncForEach(kpiList, async (kpi: any) => {
+
+                    //transform Recurring Revenue
+                    if (kpi.recurring) {
+                        const _id = new ObjectID()
+                        let recurring = kpi.recurring as N_RevenueType;
+                        recurring._id = _id
+                        recurring._partition = _partition;
+                        recurring = omit(["id"], recurring);
+                        if (recurring.formula) {
+                            const _id = new ObjectID();
+                            let formula = recurring.formula as N_FormulaType;
+                            formula._id = _id;
+                            formula = omit(["id"], formula);
+                            recurring.formula = formula;
+                        }
+                        await RevenueCollection.insertOne(recurring);
+                        kpi.recurring = _id;
+                    }
+                    //transform Non Recurring Revenue
+                    if (kpi.nonRecurring) {
+                        const _id = new ObjectID()
+                        let nonRecurring = kpi.nonRecurring as N_RevenueType;
+                        nonRecurring._id = _id
+                        nonRecurring._partition = _partition;
+                        nonRecurring = omit(["id"], nonRecurring);
+                        if (nonRecurring.formula) {
+                            const _id = new ObjectID();
+                            let formula = nonRecurring.formula as N_FormulaType;
+                            formula._id = _id;
+                            formula = omit(["id"], formula);
+                            nonRecurring.formula = formula;
+                        }
+                        await RevenueCollection.insertOne(nonRecurring);
+                        kpi.nonRecurring = _id;
+                    }
+                    kpi._id = new ObjectID();
+                    kpi.kpiId =kpi.id;
+                    kpi = omit(["id"], kpi);
+                    kpi._partition = _partition
+                    kpis.push(kpi._id);
+                    await KPICollection.insertOne(kpi);
+                });
+
+
+                //XMatrix
+                const xmatricColl = db.collection("XMatrix");
+                xMatrixs = xMatrixs.map((o: XMatrixType) => {
+                    let n = o as any;
+                    n._id = xMatricMapper[o.xMatrixId];
+                    n._partition = _partition;
+                    n.left = XMatrixTriangleMapper[o.left.xMatrixTriangleId];
+                    n.top = XMatrixTriangleMapper[o.top.xMatrixTriangleId];
+                    n.right = XMatrixTriangleMapper[o.right.xMatrixTriangleId];
+                    n.bottom = XMatrixTriangleMapper[o.bottom.xMatrixTriangleId];
+                    if(n.template){
+                        n.template = templateMetaDataMapper[o.template.templateId];
+                    }
+                  
+                    if (n.step2RejectedBy) {
+                        n.step2RejectedBy = participantMapper[n.step2RejectedBy.id]
+                    }
+
+                    if (n.step2ApprovedBy) {
+                        n.step2ApprovedBy = participantMapper[n.step2ApprovedBy.id]
+                    }
+
+                    if (n.step3ApprovedBy) {
+                        n.step3ApprovedBy = participantMapper[n.step3ApprovedBy.id]
+                    }
+                    n.participantList = o.participantList.map((p) => participantMapper[p.id])
+                    // n.allData = o.allData.map((a) => ({ ...a, _id: new ObjectID() }))
+                    return n;
+                })
+                if (xMatrixs.length > 0) {
+                    await xmatricColl.insertMany(xMatrixs);
+                }
+
+                // XMatrix
+                const xmatricTriangleColl = db.collection("XMatrixTriangle");
+                xMatrixTriangles = xMatrixTriangles.map((o: XMatrixTriangleType) => {
+                    let n = o as any;
+                    n._id = XMatrixTriangleMapper[o.xMatrixTriangleId];
+                    n._partition = _partition;
+
+                    n.linkedTriangle = o.linkedTriangle ? XMatrixTriangleMapper[o.linkedTriangle.xMatrixTriangleId] : null;
+                    n.brainstorm = o.brainstorm ? brainstormMapper[o.brainstorm.brainstormId] : null;
+
+
+                    n.goals = o.goals.map((g) => XMatrixGoalMapper[g.xMatrixGoalId])
+                    // n.allData = o.allData.map((a) => ({ ...a, _id: new ObjectID() }))
+                    return n;
+                })
+                if (xMatrixTriangles.length > 0) {
+                    await xmatricTriangleColl.insertMany(xMatrixTriangles);
+                }
+
+
+
+                //XMatrix
+                const XMatrixGoalColl = db.collection("XMatrixGoal");
+                XMatrixGoals = XMatrixGoals.map((o: XMatrixGoalType) => {
+                    let n = o as any;
+                    n._id = XMatrixGoalMapper[o.xMatrixGoalId];
+                    n._partition = _partition;
+
+                    n.goal = o.goal ? goalMapper[o.goal.goalId] : null;
+                    n.primary = o.primary ? actionMapper[o.primary.actionId] : null;
+                    n.secondary = o.secondary.map((g) => actionMapper[g.actionId]);
+                    n.majorMinors = o.majorMinors.map((g) => majorMinorMapper[g.majorMinorId]);
+                    // n.allData = o.allData.map((a) => ({ ...a, _id: new ObjectID() }))
+                    return n;
+                })
+                if (XMatrixGoals.length > 0) {
+                    await XMatrixGoalColl.insertMany(XMatrixGoals);
                 }
 
 
@@ -306,7 +482,12 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 const boardZoneColl = db.collection("BoardZone");
                 boardZone = boardZone.map((o: BoardZoneType) => {
                     let n = o as N_BoardZoneType;
-                    n._id = boardZoneMapper[o.zoneId];
+                    let _id = null;
+                    _id = zoneMapper[o.zoneId];
+                    if (!_id) {
+                        _id = boardZoneMapper[o.zoneId];
+                    }
+                    n._id = _id
                     n._partition = _partition;
                     n.cards = o.cards.map((x) => boardCardMapper[x.cardId]);
                     n.linkages = o.linkages.map((l: N_BoardZoneLinkType) => {
@@ -320,7 +501,6 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                             composite.cards = composite.cards.map((c: any) => ({ ...c, _id: new ObjectID() }))
                             l.composite = composite;
                         }
-
                     })
                     if (n.settings) {
                         const settings: any = n.settings;
@@ -389,7 +569,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 const metaObjectColl = db.collection("MetadataObject");
                 metadataObject = metadataObject.map((o: MetadataObjectType) => {
                     let n = o as N_MetaObjectType;
-                    n._id = metadataObjectMapper[o.objectId];
+                    n._id = allIds[o.objectId];
                     n._partition = _partition;
                     return n;
                 })
@@ -403,7 +583,9 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_CompositeCardType;
                     n._id = compositeCardMapper[o.compositeId];
                     n._partition = _partition;
-                    n.linkId = null;
+                    if (n.linkId) {
+                        n.linkId = boardCardMapper[n.linkId];
+                    }
                     n.cards = o.cards.map((c) => boardCardMapper[c.cardId]);
                     return n;
                 })
@@ -487,7 +669,12 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     newParticipant._partition = _partition;
                     newParticipant.actions = newParticipant.actions.map((a) => actionMapper[a.actionId])
                     newParticipant = omit(["id"], newParticipant)
-                    await wParticipantCollection.insertOne(newParticipant);
+                    try {
+                        await wParticipantCollection.insertOne(newParticipant);
+                    } catch (e) {
+
+                    }
+
                 })
 
                 //Magnets
@@ -703,7 +890,6 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_ScorecardType;
                     n._id = scoreCardMapper[o.scorecardId];
                     n._partition = _partition;
-                    n.kpiId = null;
                     if (n.nonRecurringResults) {
                         let _id = new ObjectID();
                         kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition: _partition, _id });
@@ -728,7 +914,6 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_GoalType;
                     n._id = goalMapper[o.goalId];
                     n._partition = _partition;
-                    n.kpiId = null;
                     if (n.nonRecurringResults) {
                         let _id = new ObjectID();
                         kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition: _partition, _id });
@@ -761,7 +946,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
 
                 //TemplateMetaData.
                 const templateCollection = db.collection("TemplateMetadata");
-                let { coll: templateObjects, ids: templateMetaDataMapper } = await readAndGenerateId<TemplateMetaDataType>(realm, "TemplateMetadata", "templateId");
+
                 templateObjects = templateObjects.map((o: TemplateMetaDataType) => {
                     const n = o as N_TemplateMetaDataType;
                     n._id = templateMetaDataMapper[o.templateId];
@@ -776,6 +961,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n.textGoals = o.textGoals.map(t => textGoalMapper[t.textGoalId]);
                     n.generalObject = o.generalObject.map(g => generalMapper[g.generalId]);
                     n.actions = o.actions.map(a => actionMapper[a.actionId]);
+                    n.xMatrices = o.xMatrices.map(x => xMatricMapper[x.xMatrixId]);
                     if (n.settings) {
                         n.settings = { ...o.settings, _id: new ObjectID() };
                     }
@@ -784,6 +970,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                         n.board = boardMapper[o.board.boardId];
                     }
                     n.labelList = o.labelList.map((l) => labelMapper[l._id]);
+
                     return n;
                 });
                 if (templateObjects.length > 0) {

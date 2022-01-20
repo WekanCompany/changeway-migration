@@ -33,15 +33,15 @@ export const Action = {
 		respondReason: "string?",
 		suggestedChange: "string?",
 		suggestedGoal: "Goal",
-		primaryGoal: {
-			type: "linkingObjects",
-			objectType: "XMatrixGoal",
-			property: "primary"
-		},
-		secondaryGoal: {
-			type: "linkingObjects",
-			objectType: "XMatrixGoal",
-			property: "secondary"
-		}
+		// primaryGoal: {
+		// 	type: "linkingObjects",
+		// 	objectType: "XMatrixGoal",
+		// 	property: "primary"
+		// },
+		// secondaryGoal: {
+		// 	type: "linkingObjects",
+		// 	objectType: "XMatrixGoal",
+		// 	property: "secondary"
+		// }
 	}
 };

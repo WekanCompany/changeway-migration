@@ -44,7 +44,7 @@ export function openRealm(
     );
     return Realm.open(realmConfiguration)
       .then((realm) => resolve(realm))
-      .catch((e) => reject(e));
+      .catch((e) => resolve(null));
   });
 }
 

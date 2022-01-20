@@ -4,7 +4,7 @@ import { XMatrixGoalType } from "./XMatrixGoal";
 export type XMatrixTriangleType ={
 	xMatrixTriangleId: string;
     title: string;
-    goals: XMatrixGoalType;
+    goals: XMatrixGoalType[];
     brainstorm: BrainstormType;
     linkedTriangle: XMatrixTriangleType;
     xMatrix: any;
@@ -19,10 +19,10 @@ export const XMatrixTriangle = {
 		goals: "XMatrixGoal[]",
 		brainstorm: "Brainstorm",
 		linkedTriangle: "XMatrixTriangle",
-		xMatrix: {
-			type: "linkingObjects",
-			objectType: "XMatrix",
-			property: "right"
-		}
+		// xMatrix: {
+		// 	type: "linkingObjects",
+		// 	objectType: "XMatrix",
+		// 	property: "right"
+		// }
 	}
 };

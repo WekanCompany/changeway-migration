@@ -42,10 +42,10 @@ export const ReasonForMiss = {
 		attachments: "File[]",
 		comments: "Comment[]",
 		issue: "string",
-		dailyData: {
-			type: "linkingObjects",
-			objectType: "DailyData",
-			property: "reasonForMiss"
-		}
+		// dailyData: {
+		// 	type: "linkingObjects",
+		// 	objectType: "DailyData",
+		// 	property: "reasonForMiss"
+		// }
 	}
 };

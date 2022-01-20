@@ -23,10 +23,10 @@ export const WorkshopParticipant = {
 		online: { type: "bool", default: false },
 		unlock: { type: "bool", default: false },
 		actions: "Action[]",
-		xMatrices: {
-			type: "linkingObjects",
-			objectType: "XMatrix",
-			property: "participantList"
-		}
+		// xMatrices: {
+		// 	type: "linkingObjects",
+		// 	objectType: "XMatrix",
+		// 	property: "participantList"
+		// }
 	}
 };

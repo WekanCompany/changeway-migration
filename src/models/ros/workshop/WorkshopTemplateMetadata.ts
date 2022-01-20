@@ -13,6 +13,7 @@ import { GraphType } from "./Graph";
 import { PersonaType } from "./Persona";
 import { TemplateLinkerType } from "./TemplateLinker";
 import { TextGoalType } from "./TextGoal";
+import { XMatrixType } from "./XMatrix";
 import { XMatrixGoalType } from "./XMatrixGoal";
 
 export type TemplateMetaDataType = {
@@ -35,7 +36,7 @@ export type TemplateMetaDataType = {
 	goalScorecardObjects: ScorecardType[],
 	dataBoxes: DataBoxType[],
 	contactObjects: ContactType[],
-	xMatrices: XMatrixGoalType[],
+	xMatrices: XMatrixType[],
 	textGoals: TextGoalType[],
 	generalObject: GeneralType[],
 	actions: ActionType[],
