@@ -7,7 +7,7 @@ export type EverydayBoardType = {
     everydayBoardList?: string[];
     associatedBoards?: string[];
     participants: ParticipantType[];
-    dimensionListIds?: string[];
+    dimensionListIds?: string[]|any;
     locked:boolean;
     inTree: boolean;
 }

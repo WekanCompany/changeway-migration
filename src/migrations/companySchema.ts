@@ -5,6 +5,7 @@ import { N_ColourPaletteType } from "../models/mongodb-realm/common/ColourPalett
 import { N_FileType } from "../models/mongodb-realm/common/File";
 import { N_FormulaType } from "../models/mongodb-realm/common/Formula";
 import { N_KPIType } from "../models/mongodb-realm/common/KPI";
+import { N_LabelType } from "../models/mongodb-realm/common/Label";
 import { N_MagnetType } from "../models/mongodb-realm/common/Magnet";
 import { N_ParticipantType } from "../models/mongodb-realm/common/Participant";
 import { N_RevenueType } from "../models/mongodb-realm/common/Revenue";
@@ -133,7 +134,9 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                         _id: new ObjectID(),
                         _partition: `companyRealm=${newCompanyId}`
                     }
-                    newParticipant = omit(["id"], newParticipant);
+                    if(newParticipant.identity){
+                        newParticipant.identity = newParticipant.identity.replace("_","|");
+                    }
                     await participantCollection.insertOne(newParticipant);
                     participants.push(newParticipant._id);
                 })
@@ -149,7 +152,7 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                         _id: new ObjectID(),
                         _partition: `companyRealm=${newCompanyId}`
                     }
-                    newColor = omit(["id"], newColor);
+                    // newColor = omit(["id"], newColor);
                     await coloursCollection.insertOne(newColor);
                     colours.push(newColor._id);
                 })
@@ -162,7 +165,7 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                         _id: new ObjectID(),
                         _partition: `companyRealm=${newCompanyId}`
                     }
-                    newColor = omit(["id"], newColor);
+                    // newColor = omit(["id"], newColor);
                     await coloursCollection.insertOne(newColor);
                     company.zoneHeaderColour = newColor._id;
                 }
@@ -207,7 +210,7 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                         _id: new ObjectID(),
                         _partition: `companyRealm=${newCompanyId}`
                     }
-                    newMagnet = omit(["id"], newMagnet);
+                    // newMagnet = omit(["id"], newMagnet);
                     await magnetCollection.insertOne(newMagnet);
                     defaultMagnets.push(newMagnet._id);
                 })
@@ -222,7 +225,7 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                         ...metaData,
                         _id: new ObjectID(),
                     }
-                    newMetadata = omit(["settingsMetadataId"], newMetadata);
+                    // newMetadata = omit(["settingsMetadataId"], newMetadata);
                     // await metadataCollection.insertOne(newMetadata);
                     metadatas.push(newMetadata);
                 })
@@ -232,6 +235,7 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                 //Step 7: Single Template: 
                 const singleTemplates: any = []
                 const singleTemplateCollection = db.collection("SingleTemplate");
+                const labelCollection = db.collection("Label");
                 const newTemplateIds: any = []
                 await asyncForEach(company.singleTemplates, async (singleTemplate) => {
                     let newSingleTemplate: N_SingleTemplateType = {
@@ -239,6 +243,37 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                         _id: new ObjectID(),
                         _partition: `companyRealm=${newCompanyId}`
                     }
+
+                    const labels:any = []
+                    await asyncForEach(singleTemplate.labels, async (label) => {
+                        let newLabel: N_LabelType = {
+                            ...label,
+                            _id: new ObjectID(),
+                            _partition: `companyRealm=${newCompanyId}`
+                        }
+                        await labelCollection.insertOne(newLabel);
+                        labels.push(newLabel._id);
+                    })
+                    newSingleTemplate.labels = labels;
+
+
+                    const magnets:any = []
+                    await asyncForEach(singleTemplate.magnets, async (magnet) => {
+                        let newMagnet: N_MagnetType = {
+                            ...magnet,
+                            _id: new ObjectID(),
+                            _partition: `companyRealm=${newCompanyId}`
+                        }
+                        // newMagnet = omit(["id"], newMagnet);
+                        await magnetCollection.insertOne(newMagnet);
+                        magnets.push(newMagnet._id);
+                    })
+                    newSingleTemplate.magnets =magnets;
+                    // if(newSingleTemplate.templateId){
+                    //     let templateId = 
+                    //     newSingleTemplate.templateId = template;
+                    // }
+                   
                     newSingleTemplate.templateId = null;
                     if (newSingleTemplate.templateMetadata) {
                         let _id = null;
@@ -277,6 +312,8 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                 //Step 8: Workshop Templates
                 const workshopTemplates: any = []
                 const workshopTemplateCollection = db.collection("WorkshopTemplate");
+                const workshopsIdsColl = idDb.collection("workshops");
+                const allWorkshopIds = await workshopsIdsColl.find({}).toArray();
                 await asyncForEach(company.workshopTemplates, async (workshopTemplate) => {
                     let newTemplate: N_WorkshopTemplateType = {
                         ...workshopTemplate,
@@ -284,6 +321,41 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                         _partition: `companyRealm=${newCompanyId}`
                     }
                     newTemplate.workshopId = null;
+                    // if(newTemplate.workshopId){
+                    //     const w = allWorkshopIds.find(x=>x.uuid === newTemplate.workshopId);
+                    //     if(w){
+                    //         newTemplate.workshopId = w._id;
+                    //     }else{
+
+                    //     }
+                    // }
+                    const labels:any = []
+                    await asyncForEach(workshopTemplate.labels, async (label) => {
+                        let newLabel: N_LabelType = {
+                            ...label,
+                            _id: new ObjectID(),
+                            _partition: `companyRealm=${newCompanyId}`
+                        }
+                        await labelCollection.insertOne(newLabel);
+                        labels.push(newLabel._id);
+                    })
+                    newTemplate.labels = labels;
+
+
+                    const magnets:any = []
+                    await asyncForEach(workshopTemplate.magnets, async (magnet) => {
+                        let newMagnet: N_MagnetType = {
+                            ...magnet,
+                            _id: new ObjectID(),
+                            _partition: `companyRealm=${newCompanyId}`
+                        }
+                        // newMagnet = omit(["id"], newMagnet);
+                        await magnetCollection.insertOne(newMagnet);
+                        magnets.push(newMagnet._id);
+                    });
+                    newTemplate.magnets =magnets;
+
+
                     const realmUrls = workshopTemplate.realmUrl.split("/");
                     if (realmUrls.length > 0) {
                         const workShopUUID = realmUrls.pop();
@@ -312,7 +384,7 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     newTemplate = omit(["workshopTemplateId"], newTemplate);
                     await workshopTemplateCollection.insertOne(newTemplate);
                     workshopTemplates.push(newTemplate._id);
-                })
+                });
                              
                 company.workshopTemplates = workshopTemplates;
                 if (newTemplateIds.length > 0) {

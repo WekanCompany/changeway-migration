@@ -10,7 +10,7 @@ export type EventWeekType = {
 	information?: string,
 	deleted: boolean,
 	preventCreation: boolean,
-	linkages: BoardZoneLinkType[]
+	linkages: BoardZoneLinkType[]| any
 }
 export const EventWeek = {
 	name: "EventWeek",

@@ -4,3 +4,6 @@ GoalSchema = KPIId, KPI & KPI Results rework.
 ScoreCardSchema=KPIId. 
 SummaryPostIt=CardId. -> Directly map to BoardCard.
 BoardCard= linkId -> See the type and map. Mitchel to give the list of type and its mapping collection.
+
+
+69f8a4c0-e5f1-41a3-afbe-eca530c21fff

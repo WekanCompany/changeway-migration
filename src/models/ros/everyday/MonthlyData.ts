@@ -13,7 +13,7 @@ export type MonthlyDataType = {
 	dimension: DimensionType,
 	date: Date,
 	everydayId: EverydayBoardType,
-	missIssue: MissIssueType
+	// missIssue: MissIssueType
 }
 export const MonthlyData = {
 	name: "MonthlyData",
@@ -29,6 +29,6 @@ export const MonthlyData = {
 		dimension: "Dimension",
 		date: "date",
 		everydayId: "EverydayBoard",
-		missIssue: "MissIssue"
+		// missIssue: "MissIssue"
 	}
 };

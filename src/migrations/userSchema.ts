@@ -57,6 +57,9 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
                 if (userProfile.logoFile) {
                     userProfile.logoFile = fileMapper[userProfile.logoFile.fileId]
                 }
+                if(userProfile.identity){
+                    userProfile.identity = userProfile.identity.replace("_","|");
+                }
 
 
                 //2) Map Comapnies.

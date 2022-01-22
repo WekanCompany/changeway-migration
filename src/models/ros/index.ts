@@ -103,6 +103,7 @@ import { PlanValues } from "./everyday/PlanValues";
 import { ReasonForMiss } from "./everyday/ReasonForMiss";
 import { ShiftTiming } from "./everyday/ShiftTiming";
 import { UserBoardList } from "./everyday/UserBoardList";
+import { EverydayAction } from "./everyday/Action";
 
 
 
@@ -226,11 +227,12 @@ export const EverydaySchema = [
     ShiftTiming,
     UserBoardList,
     File,
-    Participant,
+    WorkshopParticipant,
     EventTask,
     Comment,
     Reaction,
-    Label
+    Label,
+    EverydayAction
 ];
 
 

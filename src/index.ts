@@ -61,7 +61,7 @@ const userIDRunner = async () => {
     if (User) {
       User.forEach((user: any) => {
         const { userId }: any = user;
-        if (userId === "auth0|5e70a6d23119a80c87e2d085" || userId === "auth0|6095329d449d2a0068d829ef" ||userId === "auth0|5e70a715c190f70c8ab66ce7" ) {
+        if (userId === "auth0|5e70a6d23119a80c87e2d085" || userId === "auth0|6095329d449d2a0068d829ef" || userId === "auth0|5e70a715c190f70c8ab66ce7" || userId === "auth0|5f846a94d096aa006e7bc587") {
           userIds[userId] = new ObjectID();
         }
       });
@@ -244,36 +244,30 @@ const migrate = async () => {
         );
 
         await asyncForEach(workshops, async (workshop) => {
-         
-          // if (["auth0|6095329d449d2a0068d829ef","auth0|5e70a715c190f70c8ab66ce7"].indexOf(workshop.user.id) === -1) {
-          //   return
-          // }else{
-            
-          // }
           let ids = workshop.ids;
-            ids = Object.keys(ids);
-            await asyncForEach(ids, async (workshopId: string) => {
-             
-              if ( ["2de0fd49-59ee-4172-ad50-096507abdd24","5762fc36-7f1b-436a-8a65-74dc53f3c6b2","58c788d8-57a3-4f9c-b16b-472c346147dd"].indexOf(workshopId) === -1 ) {
-                return
+          ids = Object.keys(ids);
+          await asyncForEach(ids, async (workshopId: string) => {
+
+            if (["2de0fd49-59ee-4172-ad50-096507abdd24", "5762fc36-7f1b-436a-8a65-74dc53f3c6b2", "58c788d8-57a3-4f9c-b16b-472c346147dd", "99c6e913-3c92-4469-9ffe-cb81f56f6506"].indexOf(workshopId) === -1) {
+              return
+            }
+            try {
+              // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
+              const workshopRealm = await openRealm(
+                user,
+                `realms://${realmServerUrl}/${workshop.user.id.replace("|", "_")}/workshop/${workshopId}`,
+                WorkshopSchema,
+                logger,
+              );
+              if (workshopRealm) {
+                await MigrateWorkshopSchemas(workshopId, workshop.ids[workshopId], workshop.user, workshopRealm, db, logger, idDB)
+                workshopRealm.close()
               }
-              try {
-                // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
-                const workshopRealm = await openRealm(
-                  user,
-                  `realms://${realmServerUrl}/${workshop.user.id.replace("|", "_")}/workshop/${workshopId}`,
-                  WorkshopSchema,
-                  logger,
-                );
-                if (workshopRealm) {
-                  await MigrateWorkshopSchemas(workshopId, workshop.ids[workshopId], workshop.user, workshopRealm, db, logger, idDB)
-                  workshopRealm.close()
-                }
-              } catch (e) {
-                console.log(e);
-                reject(e);
-              }
-            });
+            } catch (e) {
+              console.log(e);
+              reject(e);
+            }
+          });
         });
 
 
@@ -307,7 +301,7 @@ const migrate = async () => {
               reject(e);
             }
           })
-          
+
         });
 
 
@@ -318,10 +312,10 @@ const migrate = async () => {
          * Migrate Workshops for Everyday Schemas.
          */
 
-         const everydayWorkshopIds = idDB.collection("everydayworkshops");
-         const everyDayBoards:any = await everydayWorkshopIds.find({}).toArray();
-         await asyncForEach(everyDayBoards, async (eB: any) => {
-        
+        const everydayWorkshopIds = idDB.collection("everydayworkshops");
+        const everyDayBoards: any = await everydayWorkshopIds.find({}).toArray();
+        await asyncForEach(everyDayBoards, async (eB: any) => {
+
           logger.info(
             `Migrating Everybay board ${eB.uuid} of the user ${eB.user.id}.`
           );
@@ -334,15 +328,15 @@ const migrate = async () => {
               logger,
             );
             if (everyDayRealm) {
-              const {company, user,boardId, uuid} = eB;
-              await MigrateWorkshopSchemas(uuid, boardId, user, everyDayRealm, db, logger, idDB, `companyRealm=${company.newCompanyId}&everydayRealm=true&workshopRealm=${boardId}`)
+              const { company, user, boardId, uuid } = eB;
+              await MigrateWorkshopSchemas(uuid, boardId, user, everyDayRealm, db, logger, idDB, `everydayRealm=true&companyRealm=${company.newCompanyId}&workshopRealm=${boardId}`)
               everyDayRealm.close()
             }
           } catch (e) {
             console.log(e);
             reject(e);
           }
-          
+
         });
 
 

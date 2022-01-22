@@ -1,3 +1,4 @@
+import { WorkshopParticipantType } from "../workshop/WorkshopPartitipant";
 import { EverydayBoardType } from "./EverydayBoard";
 
 export type EverydayLevelType = {
@@ -8,7 +9,7 @@ export type EverydayLevelType = {
     associatedBoards: EverydayBoardType[];
     linkageLevelRequired: boolean;
     linkageLevelSet: boolean;
-    participant: string;
+    participant: WorkshopParticipantType;
     name?: string;
     date: Date;
 }

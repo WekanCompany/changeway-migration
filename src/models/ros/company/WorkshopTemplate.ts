@@ -9,7 +9,7 @@ export type WorkshopTemplateType = {
 	order: number;
 	deleted: boolean;
 	files: FileType[];
-	workshopId?: string|null;
+	workshopId?: any;
 	magnets: MagnetType[];
 	realmUrl: string;
 	templates: TemplateDataType[];
