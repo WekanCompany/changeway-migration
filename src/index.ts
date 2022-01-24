@@ -76,12 +76,16 @@ const userIDRunner = async () => {
  *
  * Migration Process steps are as follows.
  *
- *  - Mapping User Id's to equivalent Object Id and store in a JSON file for usage.
- *  - Connect to MONGODB Client.
- *  - Create a Realm Credentials and login to ROS.
- *  - Migrate Global Users and Notifications.
- *  - Migrate Global KPI.
- *  - Migrate User Schema.
+ *  - Step1 - Mapping User Id's to equivalent Object Id and store in a JSON file for usage.
+ *  - Step2 - Connect to MONGODB Client.
+ *  - Step3 - Create a Realm Credentials and login to ROS.
+ *  - Step4 - Migrate Global Users and Notifications.
+ *  - Step5 - Migrate Global KPI.
+ *  - Step6 - Migrate User Schema.
+ *  - Step7 - Migrate Company Schemas.
+ *  - Step8 - Migrate Workshop Schemas.
+ *  - Step9 - Migrate Everyday Schemas.
+ *  - Step10 - Migrate Workshops for Everyday Schemas.
  *
  */
 
@@ -119,8 +123,6 @@ const migrate = async () => {
         if (dbClient) {
           db = dbClient.db(targetMongoDBName);
           idDB = dbClient.db("idDB");
-          const idCol = idDB.collection('id');
-          await idCol.deleteMany({});
         } else {
           logger.error("Db Cannot be opened.");
           process.exit(0);
@@ -155,6 +157,7 @@ const migrate = async () => {
         // );
         // if (globalKPI) {
         //   await MigrateGlobalKPI(globalKPI, db, logger, idDB);
+        //   globalKPI.close()
         // }
 
 
@@ -173,6 +176,7 @@ const migrate = async () => {
         // );
         // if (globalUserRealm) {
         //   await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
+        //   globalUserRealm.close()
         // }
 
         // Step 6.
@@ -207,7 +211,6 @@ const migrate = async () => {
         logger.info(
           `Migrating totally ${companies.length} Users Companies.`
         );
-
         await asyncForEach(companies, async (info) => {
           let ids = info.ids;
           ids = Object.keys(ids);
@@ -216,6 +219,9 @@ const migrate = async () => {
           );
           await asyncForEach(ids, async (companyId: string) => {
             try {
+              if (["69f8a4c0-e5f1-41a3-afbe-eca530c21fff"].indexOf(companyId) !== -1) { //Omit this company, taking more time to migrate.
+                return
+              }
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
               const companyRealm = await openRealm(
                 user,
@@ -224,7 +230,7 @@ const migrate = async () => {
                 logger,
               );
               if (companyRealm) {
-                await MigrateCompanySchemas(companyId, info.ids[companyId], info.user, companyRealm, db, logger, idDB)
+                await MigrateCompanySchemas(companyId, info.ids[companyId], info.user, companyRealm, db, logger, idDB, userIds)
                 companyRealm.close()
               }
             } catch (e) {
@@ -234,7 +240,7 @@ const migrate = async () => {
 
         });
 
-        // Step 7.
+        // Step 8.
         /**
          * Migrate Workshop Schemas.
          */
@@ -257,7 +263,7 @@ const migrate = async () => {
                 user,
                 `realms://${realmServerUrl}/${workshop.user.id.replace("|", "_")}/workshop/${workshopId}`,
                 WorkshopSchema,
-                logger,
+                logger
               );
               if (workshopRealm) {
                 await MigrateWorkshopSchemas(workshopId, workshop.ids[workshopId], workshop.user, workshopRealm, db, logger, idDB)
@@ -271,7 +277,7 @@ const migrate = async () => {
         });
 
 
-        // Step 8.
+        // Step 9.
         /**
          * Migrate Everyday Schemas.
          */
@@ -285,6 +291,10 @@ const migrate = async () => {
           );
           await asyncForEach(ids, async (companyId: string) => {
             try {
+              if (["0839822c-e821-41b8-9698-830a9ffe2a3c"].indexOf(companyId) === -1) {
+                return
+              }
+
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1/everyday
               const everyDayRealm = await openRealm(
                 user,
@@ -307,7 +317,7 @@ const migrate = async () => {
 
 
 
-        // Step 8.
+        // Step 10.
         /**
          * Migrate Workshops for Everyday Schemas.
          */
@@ -338,7 +348,6 @@ const migrate = async () => {
           }
 
         });
-
 
         resolve(true);
       });

@@ -9,7 +9,7 @@ export type SingleTemplateType = {
 	templateMetadata: TemplateDataType | any,
 	order: number,
 	deleted: boolean,
-	templateId?: string|null,
+	templateId?: any,
 	magnets: MagnetType[],
 	realmUrl: string,
 	labels: LabelType[]

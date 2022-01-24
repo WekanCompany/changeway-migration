@@ -1034,7 +1034,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 if (n.board) {
                     n.board = boardMapper[o.board.boardId];
                 }
-                n.objectList = o.objectList.map((o) => metadataObjectMapper[o.objectId]);
+                n.objectList = o.objectList.map((o) => allIds[o.objectId]);
                 if (n.nonRecurringKPITotals) {
                     let _id = new ObjectID();
                     kpiResultsCollection.insertOne({ ...n.nonRecurringKPITotals, _partition: _partition, _id });

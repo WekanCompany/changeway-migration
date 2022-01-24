@@ -48,11 +48,11 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
             let { coll: Files, ids: FilesMapper } = await readAndGenerateId<FileType>(realm, "File", "fileId");
             let { coll: Magnet, ids: MagnetMapper } = await readAndGenerateId<MagnetType>(realm, "Magnet", "id");
             let { coll: Label, ids: LabelMapper } = await readAndGenerateId<LabelType>(realm, "Label", "_id");
-            let { coll: SettingsMetadata, ids: SettingsMetadataMapper } = await readAndGenerateId<SettingsMetadataType>(realm, "SettingsMetadata", "settingsMetadataId");
+            // let { coll: SettingsMetadata, ids: SettingsMetadataMapper } = await readAndGenerateId<SettingsMetadataType>(realm, "SettingsMetadata", "settingsMetadataId");
             let { coll: Participant, ids: ParticipantMapper } = await readAndGenerateId<ParticipantType>(realm, "Participant", "email");
             let { coll: Companies, ids: CompaniesMapper } = await readAndGenerateId<CompanyType>(realm, "Company", "companyId");
             let { coll: Division, ids: DivisionMapper } = await readAndGenerateId<DivisionType>(realm, "Division", "divisionId");
-            let { coll: Employee, ids: EmployeeMapper } = await readAndGenerateId<EmployeeType>(realm, "Employee", "identity");
+            // let { coll: Employee, ids: EmployeeMapper } = await readAndGenerateId<EmployeeType>(realm, "Employee", "identity");
             let { coll: Location, ids: LocationMapper } = await readAndGenerateId<DivisionType>(realm, "Location", "locationId");
             let { coll: SingleTemplate, ids: SingleTemplateMapper } = await readAndGenerateId<SingleTemplateType>(realm, "SingleTemplate", "singleTemplateId");
             let { coll: WorkshopTemplate, ids: WorkshopTemplateMapper } = await readAndGenerateId<WorkshopTemplateType>(realm, "WorkshopTemplate", "workshopTemplateId");
@@ -117,6 +117,73 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     await coloursCollection.insertMany(ColourPalette);
                 }
 
+                //Participants
+                const participantCollection = db.collection("Participant");
+                Participant = Participant.map((p:ParticipantType) => {
+                    let newParticipant: any = {
+                        ...p,
+                        _id: ParticipantMapper[p.email],
+                        _partition
+                    }
+                    if (newParticipant.identity) {
+                        newParticipant.identity = newParticipant.identity.replace("_", "|");
+                    }
+                    return newParticipant;
+                });
+                if(Participant.length>0){
+                    await participantCollection.insertMany(Participant);
+                }
+
+
+
+                // SingleTemplate = SingleTemplate.map((o:SingleTemplateType) => {
+                //     let n: N_SingleTemplateType = {
+                //         ...o,
+                //         _id: SingleTemplateMapper[o.singleTemplateId],
+                //         _partition
+                //     }
+
+                //    if(n.labels){
+                //     n.labels = o.labels.map((l)=> LabelMapper[l._id]);
+                //    }
+                //    if(n.magnets){
+                //     n.magnets = o.magnets.map((m)=> MagnetMapper[m.id]);
+                //    }
+                   
+                //    n.templateId = null;
+                   
+                //     if (n.templateMetadata) {
+                //         let _id = null;
+                //         const existingTemplateId = templateIds[n.templateMetadata.templateId];
+                //         const realmUrls = n.realmUrl.split("/");
+                        
+                //         if (realmUrls.length > 0) {
+                //             const workShopUUID = realmUrls.pop();
+                //             const existingWorkshopId = workshopIds.find((x: any) => x.uuid === workShopUUID);
+                //             if (existingWorkshopId) {
+                //                 n.realmUrl = `workshopRealm=${existingWorkshopId}`
+                //             }
+                //         }
+                //         if (existingTemplateId) {
+                //             _id = existingTemplateId._id;
+                //         } else {
+                //             _id = new ObjectID();
+                //             n.push({ uuid: newSingleTemplate.templateMetadata.templateId, _id });
+                //         }
+                //         if(!newSingleTemplate.templateMetadata.visualName){
+                //             newSingleTemplate.templateMetadata.visualName = "";
+                //         }
+                //         newSingleTemplate.templateMetadata = {
+                //             ...newSingleTemplate.templateMetadata,
+                //             _id
+                //         }
+                //         delete newSingleTemplate.templateMetadata.templateId;
+                //     }
+                //     newSingleTemplate = omit(["singleTemplateId"], newSingleTemplate);
+                //     await singleTemplateCollection.insertOne(newSingleTemplate);
+                //     singleTemplates.push(newSingleTemplate._id);
+                // })
+                // company.singleTemplates = singleTemplates;
 
 
 

@@ -6,7 +6,7 @@ export type DimensionType = {
 	name: string,
 	displayLetter: string,
 	dimensionType: string,
-	boardId?: string,
+	boardId?: string|null,
 	metricGroup: string,
 	metric: string,
 	unitsGroup: string,

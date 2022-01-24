@@ -1,6 +1,6 @@
 import { compact } from "lodash";
-import { Db } from "mongodb"
-import winston from "winston"
+import { Db } from "mongodb";
+import winston from "winston";
 import { N_ColourPaletteType } from "../models/mongodb-realm/common/ColourPalette";
 import { N_FileType } from "../models/mongodb-realm/common/File";
 import { N_FormulaType } from "../models/mongodb-realm/common/Formula";
@@ -23,69 +23,79 @@ import { WorkshopTemplateType } from "../models/ros/company/WorkshopTemplate";
 import { asyncForEach, omit, readRealm } from "../utils";
 var ObjectID = require("bson-objectid");
 
-const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, realm: Realm, db: Db, logger: winston.Logger, idDb: Db) => {
+const MigrateCompanySchemas = (
+    companyId: any,
+    newCompanyId: any,
+    user: any,
+    realm: Realm,
+    db: Db,
+    logger: winston.Logger,
+    idDb: Db,
+    userIds: any = {}
+) => {
     return new Promise(async (resolve, reject) => {
         try {
-            logger.info(
-                `Migrating company ${companyId} for user ${user.id}.`
-            );
-            const companyObject: any = await readRealm<CompanyType>(
-                realm,
-                "Company"
-            );
+            logger.info(`Migrating company ${companyId} for user ${user.id}.`);
+            const companyObject: any = await readRealm<CompanyType>(realm, "Company");
 
             const templateIDCollection = idDb.collection("templatesMetadata");
+            const idCollection = idDb.collection("id");
             const templateIds = await templateIDCollection.find({}).toArray();
             const workshopIDCollection = idDb.collection("workshops");
             const workshopIds = await workshopIDCollection.find({}).toArray();
-
+            const UserCollection = db.collection("User");
             if (companyObject && companyObject.length > 0) {
                 const company: N_CompanyType = companyObject[0] as N_CompanyType;
-                company._id = newCompanyId,
-                    company._partition = company.companyUrl = `companyRealm=${newCompanyId}`
+                (company._id = newCompanyId),
+                    (company._partition = company.companyUrl =
+                        `companyRealm=${newCompanyId}`);
 
                 // Step1:
                 //Combine all the files and upload to Files.
-                let allFiles: FileType[] = [company.logoFile, ...company.logos, company.bannerImage, company.croppedLogo]
+                let allFiles: FileType[] = [
+                    company.logoFile,
+                    ...company.logos,
+                    company.bannerImage,
+                    company.croppedLogo,
+                ];
                 company.workshopTemplates.forEach((w: WorkshopTemplateType) => {
                     allFiles.push(...w.files);
-                })
-                allFiles = compact(allFiles)
+                });
+                allFiles = compact(allFiles);
                 const fileMapper: any = {};
                 const newFiles: N_FileType[] = allFiles.map((f: FileType) => {
                     let _id = new ObjectID();
                     fileMapper[f.fileId] = _id;
                     f = omit(["fileId"], f);
-                    return { ...f, _id, _partition: `companyRealm=${newCompanyId}` }
-                })
+                    return { ...f, _id, _partition: `companyRealm=${newCompanyId}` };
+                });
                 const FilesCollection = db.collection("File");
                 if (allFiles.length > 0) {
                     await FilesCollection.insertMany(newFiles);
                 }
                 if (company.logoFile) {
-                    company.logoFile = fileMapper[company.logoFile.fileId]
+                    company.logoFile = fileMapper[company.logoFile.fileId];
                 }
                 if (company.bannerImage) {
-                    company.bannerImage = fileMapper[company.bannerImage.fileId]
+                    company.bannerImage = fileMapper[company.bannerImage.fileId];
                 }
                 if (company.croppedLogo) {
-                    company.croppedLogo = fileMapper[company.croppedLogo.fileId]
+                    company.croppedLogo = fileMapper[company.croppedLogo.fileId];
                 }
-                company.logos = company.logos.map((x) => fileMapper[x.fileId])
+                company.logos = company.logos.map((x) => fileMapper[x.fileId]);
 
                 // company.kpis = [];
 
                 const RevenueCollection = db.collection("Revenue");
                 const KPICollection = db.collection("KPI");
-                const kpis:any = [];
+                const kpis: any = [];
                 await asyncForEach(company.kpis, async (kpi: any) => {
-                   
                     //transform Recurring Revenue
                     if (kpi.recurring) {
-                        const _id = new ObjectID()
+                        const _id = new ObjectID();
                         let recurring = kpi.recurring as N_RevenueType;
-                        recurring._id = _id
-                        recurring._partition =`companyRealm=${newCompanyId}`;
+                        recurring._id = _id;
+                        recurring._partition = `companyRealm=${newCompanyId}`;
                         recurring = omit(["id"], recurring);
                         if (recurring.formula) {
                             const _id = new ObjectID();
@@ -99,9 +109,9 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     }
                     //transform Non Recurring Revenue
                     if (kpi.nonRecurring) {
-                        const _id = new ObjectID()
+                        const _id = new ObjectID();
                         let nonRecurring = kpi.nonRecurring as N_RevenueType;
-                        nonRecurring._id = _id
+                        nonRecurring._id = _id;
                         nonRecurring._partition = `companyRealm=${newCompanyId}`;
                         nonRecurring = omit(["id"], nonRecurring);
                         if (nonRecurring.formula) {
@@ -116,14 +126,12 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     }
                     kpi._id = new ObjectID();
                     kpi = omit(["id"], kpi);
-                    kpi._partition = `companyRealm=${newCompanyId}`
+                    kpi._partition = `companyRealm=${newCompanyId}`;
                     kpis.push(kpi._id);
                     await KPICollection.insertOne(kpi);
                 });
 
-
                 company.kpis = kpis;
-
 
                 //Step 2: Participants.
                 const participants: any = [];
@@ -132,14 +140,14 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     let newParticipant: N_ParticipantType = {
                         ...participant,
                         _id: new ObjectID(),
-                        _partition: `companyRealm=${newCompanyId}`
-                    }
-                    if(newParticipant.identity){
-                        newParticipant.identity = newParticipant.identity.replace("_","|");
+                        _partition: `companyRealm=${newCompanyId}`,
+                    };
+                    if (newParticipant.identity) {
+                        newParticipant.identity = newParticipant.identity.replace("_", "|");
                     }
                     await participantCollection.insertOne(newParticipant);
                     participants.push(newParticipant._id);
-                })
+                });
 
                 company.participants = participants;
 
@@ -150,12 +158,12 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     let newColor: N_ColourPaletteType = {
                         ...color,
                         _id: new ObjectID(),
-                        _partition: `companyRealm=${newCompanyId}`
-                    }
+                        _partition: `companyRealm=${newCompanyId}`,
+                    };
                     // newColor = omit(["id"], newColor);
                     await coloursCollection.insertOne(newColor);
                     colours.push(newColor._id);
-                })
+                });
                 company.colours = colours;
 
                 //Step 3: zoneHeaderColour
@@ -163,43 +171,49 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     let newColor: N_ColourPaletteType = {
                         ...company.zoneHeaderColour,
                         _id: new ObjectID(),
-                        _partition: `companyRealm=${newCompanyId}`
-                    }
+                        _partition: `companyRealm=${newCompanyId}`,
+                    };
                     // newColor = omit(["id"], newColor);
                     await coloursCollection.insertOne(newColor);
                     company.zoneHeaderColour = newColor._id;
                 }
 
                 //Step 4: Divisions
-                await asyncForEach(company.divisions, async (division: DivisionType, index: number) => {
-                    let newDivision: N_DivisionType = { ...division, _id: "" }
-                    newDivision = omit(["employees", "divisionId"], newDivision);
-                    newDivision._id = new ObjectID();
-                    //Participants
-                    const participants: any = [];
-                    const participantCollection = db.collection("Participant");
-                    await asyncForEach(newDivision.participants, async (participant) => {
-                        let newParticipant: N_ParticipantType = {
-                            ...participant,
-                            _id: new ObjectID(),
-                            _partition: `companyRealm=${newCompanyId}`
-                        }
-                        newParticipant = omit(["id"], newParticipant);
-                        await participantCollection.insertOne(newParticipant);
-                        participants.push(newParticipant._id);
-                    })
-                    newDivision.participants = participants;
-                    //Locations
-                    newDivision.locations = newDivision.locations.map((location) => {
-                        let newLocation: N_LocationType = {
-                            ...location,
-                            _id: new ObjectID(),
-                        }
-                        newLocation = omit(["locationId"], newLocation);
-                        return newLocation;
-                    })
-                    company.divisions[index] = newDivision;
-                })
+                await asyncForEach(
+                    company.divisions,
+                    async (division: DivisionType, index: number) => {
+                        let newDivision: N_DivisionType = { ...division, _id: "" };
+                        newDivision = omit(["employees", "divisionId"], newDivision);
+                        newDivision._id = new ObjectID();
+                        //Participants
+                        const participants: any = [];
+                        const participantCollection = db.collection("Participant");
+                        await asyncForEach(
+                            newDivision.participants,
+                            async (participant) => {
+                                let newParticipant: N_ParticipantType = {
+                                    ...participant,
+                                    _id: new ObjectID(),
+                                    _partition: `companyRealm=${newCompanyId}`,
+                                };
+                                newParticipant = omit(["id"], newParticipant);
+                                await participantCollection.insertOne(newParticipant);
+                                participants.push(newParticipant._id);
+                            }
+                        );
+                        newDivision.participants = participants;
+                        //Locations
+                        newDivision.locations = newDivision.locations.map((location) => {
+                            let newLocation: N_LocationType = {
+                                ...location,
+                                _id: new ObjectID(),
+                            };
+                            newLocation = omit(["locationId"], newLocation);
+                            return newLocation;
+                        });
+                        company.divisions[index] = newDivision;
+                    }
+                );
 
                 //Step 5: Magnets.
                 const defaultMagnets: any = [];
@@ -208,14 +222,13 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     let newMagnet: N_MagnetType = {
                         ...magnet,
                         _id: new ObjectID(),
-                        _partition: `companyRealm=${newCompanyId}`
-                    }
+                        _partition: `companyRealm=${newCompanyId}`,
+                    };
                     // newMagnet = omit(["id"], newMagnet);
                     await magnetCollection.insertOne(newMagnet);
                     defaultMagnets.push(newMagnet._id);
-                })
+                });
                 company.defaultMagnets = defaultMagnets;
-
 
                 //Step 6: Organization Metadata.
                 const metadatas: any = [];
@@ -224,196 +237,270 @@ const MigrateCompanySchemas = (companyId: any, newCompanyId: any, user: any, rea
                     let newMetadata: N_SettingsMetadataType = {
                         ...metaData,
                         _id: new ObjectID(),
-                    }
+                    };
                     // newMetadata = omit(["settingsMetadataId"], newMetadata);
                     // await metadataCollection.insertOne(newMetadata);
                     metadatas.push(newMetadata);
-                })
+                });
                 company.organisationMetadata = metadatas;
 
-
-                //Step 7: Single Template: 
-                const singleTemplates: any = []
+                //Step 7: Single Template:
+                const singleTemplates: any = [];
                 const singleTemplateCollection = db.collection("SingleTemplate");
                 const labelCollection = db.collection("Label");
-                const newTemplateIds: any = []
+                const newTemplateIds: any = [];
                 await asyncForEach(company.singleTemplates, async (singleTemplate) => {
-                    let newSingleTemplate: N_SingleTemplateType = {
+                    let n: N_SingleTemplateType = {
                         ...singleTemplate,
                         _id: new ObjectID(),
-                        _partition: `companyRealm=${newCompanyId}`
-                    }
+                        _partition: `companyRealm=${newCompanyId}`,
+                    };
 
-                    const labels:any = []
+                    const labels: any = [];
                     await asyncForEach(singleTemplate.labels, async (label) => {
                         let newLabel: N_LabelType = {
                             ...label,
                             _id: new ObjectID(),
-                            _partition: `companyRealm=${newCompanyId}`
-                        }
+                            _partition: `companyRealm=${newCompanyId}`,
+                        };
                         await labelCollection.insertOne(newLabel);
                         labels.push(newLabel._id);
-                    })
-                    newSingleTemplate.labels = labels;
+                    });
+                    n.labels = labels;
 
-
-                    const magnets:any = []
+                    const magnets: any = [];
                     await asyncForEach(singleTemplate.magnets, async (magnet) => {
                         let newMagnet: N_MagnetType = {
                             ...magnet,
                             _id: new ObjectID(),
-                            _partition: `companyRealm=${newCompanyId}`
-                        }
+                            _partition: `companyRealm=${newCompanyId}`,
+                        };
                         // newMagnet = omit(["id"], newMagnet);
                         await magnetCollection.insertOne(newMagnet);
                         magnets.push(newMagnet._id);
-                    })
-                    newSingleTemplate.magnets =magnets;
-                    // if(newSingleTemplate.templateId){
-                    //     let templateId = 
-                    //     newSingleTemplate.templateId = template;
-                    // }
-                   
-                    newSingleTemplate.templateId = null;
-                    if (newSingleTemplate.templateMetadata) {
-                        let _id = null;
-                        const existingTemplateId = templateIds.find((x: any) => x.uuid === newSingleTemplate.templateMetadata.templateId);
-                        const realmUrls = newSingleTemplate.realmUrl.split("/");
-                        
-                        if (realmUrls.length > 0) {
-                            const workShopUUID = realmUrls.pop();
-                            const existingWorkshopId = workshopIds.find((x: any) => x.uuid === workShopUUID);
+                    });
+                    n.magnets = magnets;
+                    n.templateId = null;
+                    if (!n.deleted) {
+                        let realmUrlSplit = n.realmUrl
+                            .replace(
+                                "realms://changeway-development.de1a.cloud.realm.io/",
+                                ""
+                            )
+                            .split("/");
+                        if (realmUrlSplit.length === 3) {
+                            ///auth0_5e70a715c190f70c8ab66ce7/workshop/f2fba1e4-60d9-4caf-809f-95671f0a8c4d
+                            const workShopUUID = realmUrlSplit[2];
+                            const userId = realmUrlSplit[0].replace("_", "|");
+                            const existingWorkshopId = workshopIds.find(
+                                (x: any) => x.uuid === workShopUUID
+                            );
                             if (existingWorkshopId) {
-                                newSingleTemplate.realmUrl = `workshopRealm=${existingWorkshopId}`
+                                n.realmUrl = `workshopRealm=${existingWorkshopId}`;
+                                //Add permission.
+                                await UserCollection.updateOne(
+                                    { userId },
+                                    { $push: { workshops: `workshopRealm=${existingWorkshopId}` } })
+                            } else {
+                                const _id = new ObjectID();
+                                n.realmUrl = `workshopRealm=${_id}`;
+                                // n.templateId = _id;
+                                const key = `ids.[${workShopUUID}]`
+                                await idCollection.updateOne(
+                                    {
+                                        "user.id": userId,
+                                        type: "workshop",
+                                    },
+                                    {
+                                        $set: {
+                                            type: "workshop",
+                                            [key]: _id,
+                                            user: {
+                                                id: userId,
+                                                _id: userIds[userId] || new ObjectID(),
+                                            },
+                                        },
+                                    },
+                                    { upsert: true }
+                                );
+                                await workshopIDCollection.insertOne({ _id, uuid: workShopUUID });
+
+                                await UserCollection.updateOne(
+                                    { userId },
+                                    { $push: { workshops: `workshopRealm=${_id}` } })
                             }
                         }
+                    }
+
+                    if (n.templateMetadata) {
+                        let _id = null;
+                        const existingTemplateId = templateIds.find(
+                            (x: any) => x.uuid === n.templateMetadata.templateId
+                        );
+
                         if (existingTemplateId) {
                             _id = existingTemplateId._id;
                         } else {
                             _id = new ObjectID();
-                            newTemplateIds.push({ uuid: newSingleTemplate.templateMetadata.templateId, _id });
+                            newTemplateIds.push({ uuid: n.templateMetadata.templateId, _id });
                         }
-                        if(!newSingleTemplate.templateMetadata.visualName){
-                            newSingleTemplate.templateMetadata.visualName = "";
+                        if (!n.templateMetadata.visualName) {
+                            n.templateMetadata.visualName = "";
                         }
-                        newSingleTemplate.templateMetadata = {
-                            ...newSingleTemplate.templateMetadata,
-                            _id
-                        }
-                        delete newSingleTemplate.templateMetadata.templateId;
+                        n.templateMetadata = {
+                            ...n.templateMetadata,
+                            _id,
+                        };
+                        delete n.templateMetadata.templateId;
                     }
-                    newSingleTemplate = omit(["singleTemplateId"], newSingleTemplate);
-                    await singleTemplateCollection.insertOne(newSingleTemplate);
-                    singleTemplates.push(newSingleTemplate._id);
-                })
+                    n = omit(["singleTemplateId"], n);
+                    await singleTemplateCollection.insertOne(n);
+                    singleTemplates.push(n._id);
+                });
                 company.singleTemplates = singleTemplates;
 
 
+
+
+
+
+
                 //Step 8: Workshop Templates
-                const workshopTemplates: any = []
+                const workshopTemplates: any = [];
                 const workshopTemplateCollection = db.collection("WorkshopTemplate");
-                const workshopsIdsColl = idDb.collection("workshops");
-                const allWorkshopIds = await workshopsIdsColl.find({}).toArray();
-                await asyncForEach(company.workshopTemplates, async (workshopTemplate) => {
-                    let newTemplate: N_WorkshopTemplateType = {
-                        ...workshopTemplate,
-                        _id: new ObjectID(),
-                        _partition: `companyRealm=${newCompanyId}`
-                    }
-                    newTemplate.workshopId = null;
-                    // if(newTemplate.workshopId){
-                    //     const w = allWorkshopIds.find(x=>x.uuid === newTemplate.workshopId);
-                    //     if(w){
-                    //         newTemplate.workshopId = w._id;
-                    //     }else{
-
-                    //     }
-                    // }
-                    const labels:any = []
-                    await asyncForEach(workshopTemplate.labels, async (label) => {
-                        let newLabel: N_LabelType = {
-                            ...label,
+                await asyncForEach(
+                    company.workshopTemplates,
+                    async (workshopTemplate) => {
+                        let n: N_WorkshopTemplateType = {
+                            ...workshopTemplate,
                             _id: new ObjectID(),
-                            _partition: `companyRealm=${newCompanyId}`
+                            _partition: `companyRealm=${newCompanyId}`,
+                        };
+
+                        const labels: any = [];
+                        await asyncForEach(workshopTemplate.labels, async (label) => {
+                            let newLabel: N_LabelType = {
+                                ...label,
+                                _id: new ObjectID(),
+                                _partition: `companyRealm=${newCompanyId}`,
+                            };
+                            await labelCollection.insertOne(newLabel);
+                            labels.push(newLabel._id);
+                        });
+                        n.labels = labels;
+
+                        const magnets: any = [];
+                        await asyncForEach(workshopTemplate.magnets, async (magnet) => {
+                            let newMagnet: N_MagnetType = {
+                                ...magnet,
+                                _id: new ObjectID(),
+                                _partition: `companyRealm=${newCompanyId}`,
+                            };
+                            // newMagnet = omit(["id"], newMagnet);
+                            await magnetCollection.insertOne(newMagnet);
+                            magnets.push(newMagnet._id);
+                        });
+                        n.magnets = magnets;
+
+                        if (!n.deleted) {
+                            let realmUrlSplit = n.realmUrl
+                                .replace(
+                                    "realms://changeway-development.de1a.cloud.realm.io/",
+                                    ""
+                                )
+                                .split("/");
+                            if (realmUrlSplit.length === 3) {
+                                ///auth0_5e70a715c190f70c8ab66ce7/workshop/f2fba1e4-60d9-4caf-809f-95671f0a8c4d
+                                const workShopUUID = realmUrlSplit[2];
+                                const userId = realmUrlSplit[0].replace("_", "|");
+                                const existingWorkshopId = workshopIds.find(
+                                    (x: any) => x.uuid === workShopUUID
+                                );
+                                if (existingWorkshopId) {
+                                    n.realmUrl = `workshopRealm=${existingWorkshopId}`;
+                                    n.workshopId = existingWorkshopId;
+                                    await UserCollection.updateOne(
+                                        { userId },
+                                        { $push: { workshops: `workshopRealm=${existingWorkshopId}` } })
+                                } else {
+                                    const _id = new ObjectID();
+                                    n.realmUrl = `workshopRealm=${_id}`;
+                                    n.workshopId = _id;
+                                    const key = `ids.[${workShopUUID}]`
+                                    await idCollection.updateOne(
+                                        {
+                                            "user.id": userId,
+                                            type: "workshop",
+                                        },
+                                        {
+                                            $set: {
+                                                type: "workshop",
+                                                [key]: _id,
+                                                user: {
+                                                    id: userId,
+                                                    _id: userIds[userId] || new ObjectID(),
+                                                },
+                                            },
+                                        },
+                                        { upsert: true }
+                                    );
+                                    await workshopIDCollection.insertOne({ _id, uuid: workShopUUID });
+                                    //Add permission.
+                                    await UserCollection.updateOne(
+                                        { userId },
+                                        { $push: { workshops: `workshopRealm=${_id}` } })
+                                }
+                            } else {
+                                n.workshopId = null;
+                            }
                         }
-                        await labelCollection.insertOne(newLabel);
-                        labels.push(newLabel._id);
-                    })
-                    newTemplate.labels = labels;
 
+                        n.templates = n.templates.map((t) => {
+                            let _id = null;
+                            const existingTemplateId = templateIds.find(
+                                (x: any) => x.uuid === t.templateId
+                            );
+                            if (existingTemplateId) {
+                                _id = existingTemplateId._id;
+                            } else {
+                                _id = new ObjectID();
+                                newTemplateIds.push({ uuid: t.templateId, _id });
+                            }
+                            if (!t.visualName) {
+                                t.visualName = "";
+                            }
+                            delete t.templateId;
+                            return { ...t, _id };
+                        });
 
-                    const magnets:any = []
-                    await asyncForEach(workshopTemplate.magnets, async (magnet) => {
-                        let newMagnet: N_MagnetType = {
-                            ...magnet,
-                            _id: new ObjectID(),
-                            _partition: `companyRealm=${newCompanyId}`
-                        }
-                        // newMagnet = omit(["id"], newMagnet);
-                        await magnetCollection.insertOne(newMagnet);
-                        magnets.push(newMagnet._id);
-                    });
-                    newTemplate.magnets =magnets;
-
-
-                    const realmUrls = workshopTemplate.realmUrl.split("/");
-                    if (realmUrls.length > 0) {
-                        const workShopUUID = realmUrls.pop();
-                        const existingWorkshopId = workshopIds.find((x: any) => x.uuid === workShopUUID);
-                        if (existingWorkshopId) {
-                            workshopTemplate.realmUrl = `workshopRealm=${existingWorkshopId}`
-                        }
+                        n = omit(["workshopTemplateId"], n);
+                        await workshopTemplateCollection.insertOne(n);
+                        workshopTemplates.push(n._id);
                     }
-                    
-                    newTemplate.templates = newTemplate.templates.map((t) => {
-                        let _id = null;
-                        const existingTemplateId = templateIds.find((x: any) => x.uuid === t.templateId);
-                        if (existingTemplateId) {
-                            _id = existingTemplateId._id;
-                        } else {
-                            _id = new ObjectID();
-                            newTemplateIds.push({ uuid: t.templateId, _id });
-                        }
-                        if(!t.visualName){
-                            t.visualName = "";
-                        }
-                        delete t.templateId;
-                        return {...t, _id};
-                    });
+                );
 
-                    newTemplate = omit(["workshopTemplateId"], newTemplate);
-                    await workshopTemplateCollection.insertOne(newTemplate);
-                    workshopTemplates.push(newTemplate._id);
-                });
-                             
                 company.workshopTemplates = workshopTemplates;
                 if (newTemplateIds.length > 0) {
-                    await templateIDCollection.insertMany(newTemplateIds)
+                    await templateIDCollection.insertMany(newTemplateIds);
                 }
                 const companyCollection = db.collection("Company");
 
                 //Insert the Company.
-                try{
+                try {
                     await companyCollection.insertOne(company);
-                }catch(e){
+                } catch (e) {
                     console.log("Error Inserting the company");
                 }
-                
-
             } else {
-                logger.error(`Company ${companyId} not found. So, Ignoring.`)
-                // const ProfileCollection = db.collection("Profile");
+                logger.error(`Company ${companyId} not found. So, Ignoring.`);
 
-                // await ProfileCollection.updateOne(
-                //     { _id: user.userProfile },
-                //     { $pull: { companies: { _id: newCompanyId } } });
             }
-            resolve(true)
+            resolve(true);
         } catch (e) {
             console.log(e);
-            reject(e)
+            reject(e);
         }
-    })
-}
+    });
+};
 
 export default MigrateCompanySchemas;

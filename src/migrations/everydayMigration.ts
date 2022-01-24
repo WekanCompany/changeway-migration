@@ -95,7 +95,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                     }
                 }
                 if (e.boardId) {
-                    e.boardId = EverydayBoardMapper[e.boardId];
+                    e.boardId = EverydayBoardMapper[e.boardId] || null;
+                }else{
+                    e.boardId = null;
                 }
 
                 return { ...e, _id, _partition };
@@ -511,7 +513,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
 
 
             //Participants
-            const ParticipantCollection = db.collection("Participant");
+            const ParticipantCollection = db.collection("WorkshopParticipant");
             Participant = Participant.map((participant: WorkshopParticipantType) => {
                 const _id = ParticipantMapper[participant.email];
                 participant.actions = participant.actions.map((x) => ActionMapper[x.actionId])
