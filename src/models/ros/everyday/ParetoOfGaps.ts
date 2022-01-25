@@ -15,7 +15,7 @@ export type ParetoOfGapsType = {
 		totalLostTime: number,
 		lostTimeDataFormat: string,
 		missIssue: MissIssueType,
-		issue: string,
+		issue: string | null,
 		attachments: FileType[],
 		comments: CommentType[],
 		percentFreq: number,

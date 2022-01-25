@@ -73,9 +73,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
             let { coll: Action, ids: ActionMapper } = await readAndGenerateId<EverydayActionType>(realm, "Action", "actionId");
             let { coll: Comment, ids: CommentMapper } = await readAndGenerateId<CommentType>(realm, "Comment", "commentId");
             let { coll: Label, ids: LabelMapper } = await readAndGenerateId<LabelType>(realm, "Label", "id");
-            const planIdMapper:any = {}
-            const shiftIdMapper:any = {}
-            const dimensionIdMapper:any = {}
+            const planIdMapper: any = {}
+            const shiftIdMapper: any = {}
+            const dimensionIdMapper: any = {}
 
 
             const DimensionColl = db.collection("Dimension");
@@ -86,9 +86,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 }
                 if (e.dimensionId) {
                     let dimensionId = dimensionIdMapper[e.dimensionId];
-                    if(dimensionId){
+                    if (dimensionId) {
                         e.dimensionId = dimensionId;
-                    }else{
+                    } else {
                         dimensionId = new ObjectID();
                         dimensionIdMapper[e.dimensionId] = dimensionId;
                         e.dimensionId = dimensionId
@@ -96,7 +96,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 }
                 if (e.boardId) {
                     e.boardId = EverydayBoardMapper[e.boardId] || null;
-                }else{
+                } else {
                     e.boardId = null;
                 }
 
@@ -118,9 +118,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 }
                 if (e.dimensionId) {
                     let dimensionId = dimensionIdMapper[e.dimensionId];
-                    if(dimensionId){
+                    if (dimensionId) {
                         e.dimensionId = dimensionId;
-                    }else{
+                    } else {
                         dimensionId = new ObjectID();
                         dimensionIdMapper[e.dimensionId] = dimensionId;
                         e.dimensionId = dimensionId
@@ -128,9 +128,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 }
                 if (e.planId) {
                     let planId = planIdMapper[e.planId];
-                    if(planId){
+                    if (planId) {
                         e.planId = planId;
-                    }else{
+                    } else {
                         planId = new ObjectID();
                         planIdMapper[e.planId] = planId;
                         e.planId = planId
@@ -155,9 +155,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 }
                 if (e.dimensionId) {
                     let dimensionId = dimensionIdMapper[e.dimensionId];
-                    if(dimensionId){
+                    if (dimensionId) {
                         e.dimensionId = dimensionId;
-                    }else{
+                    } else {
                         dimensionId = new ObjectID();
                         dimensionIdMapper[e.dimensionId] = dimensionId;
                         e.dimensionId = dimensionId
@@ -166,9 +166,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
 
                 if (e.shiftId) {
                     let shiftId = shiftIdMapper[e.shiftId];
-                    if(shiftId){
+                    if (shiftId) {
                         e.shiftId = shiftId;
-                    }else{
+                    } else {
                         shiftId = new ObjectID();
                         shiftIdMapper[e.shiftId] = shiftId;
                         e.shiftId = shiftId
@@ -291,7 +291,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                     e.everydayBoardList = e.everydayBoardList.map(a => EverydayBoardMapper[a])
                 }
                 if (e.dimensionListIds) {
-                    e.dimensionListIds = e.dimensionListIds.map((a:any) =>dimensionIdMapper[a])
+                    e.dimensionListIds = e.dimensionListIds.map((a: any) => dimensionIdMapper[a])
                 }
                 return { ...e, _id, _partition };
             })
@@ -327,7 +327,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
             }
 
 
-           
+
 
 
             const LineManagerColl = db.collection("LineManager");
@@ -365,15 +365,19 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 if (e.missReason) {
                     e.missReason = MissReasonMapper[e.missReason._id];
                 }
-                if (e.missReasonId) {
-                    e.missReasonId = MissReasonMapper[e.missReasonId];
+                if (e.missReasonId && e.missReasonId.length > 0) {
+                    e.missReasonId = MissReasonMapper[e.missReasonId] || null;
+                } else {
+                    e.missReasonId = null;
                 }
                 if (e.everydayId) {
                     e.everydayId = EverydayBoardMapper[e.everydayId._id];
                 }
 
-                if (e.issue) {
-                    e.issue = EventTaskMapper[e.issue];
+                if (e.issue && e.issue.length > 0) {
+                    e.issue = EventTaskMapper[e.issue] || null;
+                } else {
+                    e.issue = null;
                 }
 
                 e.comments = e.comments.map((c) => {
@@ -424,8 +428,10 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 if (e.missIssue) {
                     e.missIssue = MissIssueMapper[e.missIssue._id];
                 }
-                if (e.issue) {
-                    e.issue = EventTaskMapper[e.issue];
+                if (e.issue && e.issue.length > 0) {
+                    e.issue = EventTaskMapper[e.issue] || null;
+                } else {
+                    e.issue = null;
                 }
 
                 e.comments = e.comments.map((c) => {
@@ -458,7 +464,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 MissIssueColl.insertMany(MissIssue as any);
             }
 
-            
+
 
             const PlanValuesColl = db.collection("PlanValues");
             PlanValues = PlanValues.map((e: PlanValuesType) => {
@@ -471,7 +477,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
             if (PlanValues.length > 0) {
                 PlanValuesColl.insertMany(PlanValues as any);
             }
-            
+
 
             const GraphSettingsColl = db.collection("GraphSettings");
             GraphSettings = GraphSettings.map((e: GraphSettingsType) => {
@@ -516,6 +522,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
             const ParticipantCollection = db.collection("WorkshopParticipant");
             Participant = Participant.map((participant: WorkshopParticipantType) => {
                 const _id = ParticipantMapper[participant.email];
+                if (participant.identity) {
+                    participant.identity = participant.identity.replace("_", "|");
+                }
                 participant.actions = participant.actions.map((x) => ActionMapper[x.actionId])
                 return { ...participant, _id, _partition }
             });

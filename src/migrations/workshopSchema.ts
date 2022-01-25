@@ -470,7 +470,13 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_BoardColumnType;
                     n._id = boardColumnMapper[o.columnId];
                     n._partition = _partition;
-                    n.zones = o.zones.map(z => boardZoneMapper[z.zoneId])
+                    n.zones = o.zones.map((o) => {
+                        let _id = zoneMapper[o.zoneId];
+                        if (!_id) {
+                            _id = boardZoneMapper[o.zoneId];
+                        }
+                        return _id;
+                    });
                     return n;
                 })
                 if (boardColumn.length > 0) {
@@ -669,7 +675,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     newParticipant._id = participantMapper[participant.email];
                     newParticipant._partition = _partition;
                     newParticipant.actions = newParticipant.actions.map((a) => actionMapper[a.actionId])
-                    // newParticipant = omit(["id"], newParticipant)
+                    if (newParticipant.identity) {
+                        newParticipant.identity = newParticipant.identity.replace("_", "|");
+                    }
+                     // newParticipant = omit(["id"], newParticipant)
                     try {
                         await wParticipantCollection.insertOne(newParticipant);
                     } catch (e) {
@@ -934,6 +943,12 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_GoalType;
                     n._id = goalMapper[o.goalId];
                     n._partition = _partition;
+                    if(n.kpi){
+                        n.kpi = KPIMapper[o.kpi.id];
+                    }
+                    // if(n.kpiId){
+                    //     // n.kpi = KPIMapper[o.kpi.id];
+                    // }
                     if (n.nonRecurringResults) {
                         let _id = new ObjectID();
                         kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition: _partition, _id });
@@ -1034,7 +1049,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 if (n.board) {
                     n.board = boardMapper[o.board.boardId];
                 }
-                n.objectList = o.objectList.map((o) => allIds[o.objectId]);
+                n.objectList = [];// o.objectList.map((o) => allIds[o.objectId]);
                 if (n.nonRecurringKPITotals) {
                     let _id = new ObjectID();
                     kpiResultsCollection.insertOne({ ...n.nonRecurringKPITotals, _partition: _partition, _id });

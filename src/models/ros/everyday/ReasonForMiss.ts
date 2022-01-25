@@ -6,7 +6,7 @@ import { MissReasonType } from "./MissReason";
 
 export type ReasonForMissType = {
 	_id: string,
-		missReasonId: string,
+		missReasonId: string | null,
 		missReason: MissReasonType,
 		reason: string,
 		dimension: DimensionType,
@@ -19,7 +19,7 @@ export type ReasonForMissType = {
 		lostTimeDataFormat: string,
 		attachments: FileType[],
 		comments: CommentType[],
-		issue: string,
+		issue: string | null,
 		dailyData: any
 }
 

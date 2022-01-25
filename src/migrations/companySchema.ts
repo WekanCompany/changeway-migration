@@ -16,7 +16,7 @@ import { N_LocationType } from "../models/mongodb-realm/company/Location";
 import { N_SingleTemplateType } from "../models/mongodb-realm/company/SingleTemplate";
 import { N_WorkshopTemplateType } from "../models/mongodb-realm/company/WorkshopTemplate";
 import { FileType } from "../models/ros/common/File";
-import { KPIType } from "../models/ros/common/KPI";
+import { CKPIType } from "../models/ros/company/KPI";
 import { CompanyType } from "../models/ros/company/Company";
 import { DivisionType } from "../models/ros/company/Division";
 import { WorkshopTemplateType } from "../models/ros/company/WorkshopTemplate";
@@ -84,7 +84,7 @@ const MigrateCompanySchemas = (
                 }
                 company.logos = company.logos.map((x) => fileMapper[x.fileId]);
 
-                // company.kpis = [];
+              
 
                 const RevenueCollection = db.collection("Revenue");
                 const KPICollection = db.collection("KPI");
@@ -125,7 +125,8 @@ const MigrateCompanySchemas = (
                         kpi.nonRecurring = _id;
                     }
                     kpi._id = new ObjectID();
-                    kpi = omit(["id"], kpi);
+                    kpi.kpiId = kpi.id;
+                    // kpi = omit(["id"], kpi);
                     kpi._partition = `companyRealm=${newCompanyId}`;
                     kpis.push(kpi._id);
                     await KPICollection.insertOne(kpi);
@@ -296,11 +297,11 @@ const MigrateCompanySchemas = (
                                 (x: any) => x.uuid === workShopUUID
                             );
                             if (existingWorkshopId) {
-                                n.realmUrl = `workshopRealm=${existingWorkshopId}`;
+                                n.realmUrl = `workshopRealm=${existingWorkshopId._id}`;
                                 //Add permission.
                                 await UserCollection.updateOne(
                                     { userId },
-                                    { $push: { workshops: `workshopRealm=${existingWorkshopId}` } })
+                                    { $push: { workshops: `workshopRealm=${existingWorkshopId._id}` } })
                             } else {
                                 const _id = new ObjectID();
                                 n.realmUrl = `workshopRealm=${_id}`;
@@ -417,11 +418,11 @@ const MigrateCompanySchemas = (
                                     (x: any) => x.uuid === workShopUUID
                                 );
                                 if (existingWorkshopId) {
-                                    n.realmUrl = `workshopRealm=${existingWorkshopId}`;
-                                    n.workshopId = existingWorkshopId;
+                                    n.realmUrl = `workshopRealm=${existingWorkshopId._id}`;
+                                    n.workshopId = existingWorkshopId._id;
                                     await UserCollection.updateOne(
                                         { userId },
-                                        { $push: { workshops: `workshopRealm=${existingWorkshopId}` } })
+                                        { $push: { workshops: `workshopRealm=${existingWorkshopId._id}` } })
                                 } else {
                                     const _id = new ObjectID();
                                     n.realmUrl = `workshopRealm=${_id}`;
@@ -454,7 +455,7 @@ const MigrateCompanySchemas = (
                                 n.workshopId = null;
                             }
                         }
-
+                        n.workshopId = null;
                         n.templates = n.templates.map((t) => {
                             let _id = null;
                             const existingTemplateId = templateIds.find(

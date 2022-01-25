@@ -6,6 +6,8 @@ logs/
 
 user-list.json
 
+src-old/
+
 ids/*
 
 realm-object-server
