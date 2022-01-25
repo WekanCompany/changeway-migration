@@ -197,8 +197,6 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     ...boardZoneMapper
                 };
 
-                const KPICollection = db.collection("KPI");
-
                 //BoardCard
                 const mapLinkId = (type: string, id: any): any => {
                     let _id: any = null;
@@ -318,7 +316,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
 
                 //KPI
                 const RevenueCollection = db.collection("Revenue");
-              
+                const KPICollection = db.collection("KPI");
                 const kpis: any = [];
                 await asyncForEach(kpiList, async (kpi: any) => {
 
@@ -943,20 +941,14 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
 
                 //Goal
                 const goalCollection = db.collection("Goal");
-                const newGoals:any = [];
-                await asyncForEach(goals,async (o: GoalType) => {
+                goals = goals.map((o: GoalType) => {
                     let n = o as N_GoalType;
                     n._id = goalMapper[o.goalId];
                     n._partition = _partition;
                     if(n.kpi){
                         n.kpi = KPIMapper[o.kpi.id];
                     }
-                    // if(n.kpiId && n.kpiId.length>0){
-                    //     const kpi = await KPICollection.findOne({id:n.kpiId});
-                    //     if(kpi){
-                    //         n.kpiId = kpi.id;
-                    //     }
-                    // }
+                   
                     if (n.nonRecurringResults) {
                         let _id = new ObjectID();
                         kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition: _partition, _id });
@@ -981,10 +973,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     if (n.zoneId) {
                         n.zoneId = zoneMapper[n.zoneId.zoneId]
                     }
-                    newGoals.push(n);
+                    return n;
                 })
-                if (newGoals.length > 0) {
-                    await goalCollection.insertMany(newGoals);
+                if (goals.length > 0) {
+                    await goalCollection.insertMany(goals);
                 }
 
                 //TemplateMetaData.
