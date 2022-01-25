@@ -87,6 +87,7 @@ const MigrateCompanySchemas = (
               
 
                 const RevenueCollection = db.collection("Revenue");
+                const FormulaCollection = db.collection("Formula");
                 const KPICollection = db.collection("KPI");
                 const kpis: any = [];
                 await asyncForEach(company.kpis, async (kpi: any) => {
@@ -101,8 +102,10 @@ const MigrateCompanySchemas = (
                             const _id = new ObjectID();
                             let formula = recurring.formula as N_FormulaType;
                             formula._id = _id;
-                            formula = omit(["id"], formula);
-                            recurring.formula = formula;
+                            formula._partition =  `companyRealm=${newCompanyId}`;
+                            // formula = omit(["id"], formula);
+                            await FormulaCollection.insertOne(formula);
+                            recurring.formula = _id;
                         }
                         await RevenueCollection.insertOne(recurring);
                         kpi.recurring = _id;
@@ -118,8 +121,10 @@ const MigrateCompanySchemas = (
                             const _id = new ObjectID();
                             let formula = nonRecurring.formula as N_FormulaType;
                             formula._id = _id;
-                            formula = omit(["id"], formula);
-                            nonRecurring.formula = formula;
+                            formula._partition =  `companyRealm=${newCompanyId}`;
+                            // formula = omit(["id"], formula);
+                            await FormulaCollection.insertOne(formula);
+                            nonRecurring.formula = _id;
                         }
                         await RevenueCollection.insertOne(nonRecurring);
                         kpi.nonRecurring = _id;

@@ -6,7 +6,7 @@ export type RevenueType = {
     costType: string,
     rule?: string,
     formulaDescription?: string,
-    formula: FormulaType,
+    formula: FormulaType|any,
     valuePerUnit: string,
     valuePerUnitDescription?: string
 }

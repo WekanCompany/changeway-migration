@@ -493,7 +493,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
             // EverydayBoardInstructions
             const EverydayBoardInstructionsColl = db.collection("EverydayBoardInstructions");
             EverydayBoardInstructions = EverydayBoardInstructions.map((e: EverydayBoardInstructionsType) => {
-                e.boardId = EverydayBoardInstructionsMapper[e.boardId];
+                e.boardId = `${EverydayBoardInstructionsMapper[e.boardId]}`;
                 return { ...e, _partition };
             })
             if (EverydayBoardInstructions.length > 0) {

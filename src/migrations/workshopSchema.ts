@@ -317,6 +317,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 //KPI
                 const RevenueCollection = db.collection("Revenue");
                 const KPICollection = db.collection("KPI");
+                const FormulaCollection = db.collection("Formula");
                 const kpis: any = [];
                 await asyncForEach(kpiList, async (kpi: any) => {
 
@@ -331,8 +332,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                             const _id = new ObjectID();
                             let formula = recurring.formula as N_FormulaType;
                             formula._id = _id;
+                            formula._partition =  _partition;
                             // formula = omit(["id"], formula);
-                            recurring.formula = formula;
+                            await FormulaCollection.insertOne(formula);
+                            recurring.formula = _id;
                         }
                         await RevenueCollection.insertOne(recurring);
                         kpi.recurring = _id;
@@ -348,8 +351,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                             const _id = new ObjectID();
                             let formula = nonRecurring.formula as N_FormulaType;
                             formula._id = _id;
+                            formula._partition =  _partition;
                             // formula = omit(["id"], formula);
-                            nonRecurring.formula = formula;
+                            await FormulaCollection.insertOne(formula);
+                            nonRecurring.formula = _id;
                         }
                         await RevenueCollection.insertOne(nonRecurring);
                         kpi.nonRecurring = _id;

@@ -18,6 +18,7 @@ const MigrateGlobalKPI = (realm: any, db: Db, logger: winston.Logger, idDb: Db) 
 
             const KPICollection = db.collection("KPI");
             const RevenueCollection = db.collection("Revenue")
+            const FormulaCollection = db.collection("Formula")
             const KPIIDCollection = idDb.collection("id");
             const kpiIds: any = {};
             if (kpis && kpis.length > 0) {
@@ -36,8 +37,10 @@ const MigrateGlobalKPI = (realm: any, db: Db, logger: winston.Logger, idDb: Db) 
                             const _id = new ObjectID();
                             let formula = recurring.formula as N_FormulaType;
                             formula._id = _id;
-                            formula = omit(["id"], formula);
-                            recurring.formula = formula;
+                            formula._partition =  "global";
+                            // formula = omit(["id"], formula);
+                            await FormulaCollection.insertOne(formula);
+                            recurring.formula = _id;
                         }
                         await RevenueCollection.insertOne(recurring);
                         kpi.recurring = _id;
@@ -53,8 +56,9 @@ const MigrateGlobalKPI = (realm: any, db: Db, logger: winston.Logger, idDb: Db) 
                             const _id = new ObjectID();
                             let formula = nonRecurring.formula as N_FormulaType;
                             formula._id = _id;
-                            formula = omit(["id"], formula);
-                            nonRecurring.formula = formula;
+                            formula._partition =  "global";
+                            await FormulaCollection.insertOne(formula);
+                            nonRecurring.formula = _id;
                         }
                         await RevenueCollection.insertOne(nonRecurring);
                         kpi.nonRecurring = _id;
