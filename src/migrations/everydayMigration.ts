@@ -233,7 +233,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 n.mentions = o.mentions.map((m) => ParticipantMapper[m.email]);
                 n.emoticons = o.emoticons.map((e) => {
                     e.participant = ParticipantMapper[e.participant.email];
-                    return { ...e, _id: new ObjectID() }
+                    let _id =  new ObjectID()
+                    e.reactionId = _id
+                    return { ...e, _id }
                 })
                 return n;
             })

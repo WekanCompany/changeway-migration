@@ -197,6 +197,8 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     ...boardZoneMapper
                 };
 
+                const KPICollection = db.collection("KPI");
+
                 //BoardCard
                 const mapLinkId = (type: string, id: any): any => {
                     let _id: any = null;
@@ -316,7 +318,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
 
                 //KPI
                 const RevenueCollection = db.collection("Revenue");
-                const KPICollection = db.collection("KPI");
+              
                 const kpis: any = [];
                 await asyncForEach(kpiList, async (kpi: any) => {
 
@@ -863,7 +865,9 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n.mentions = o.mentions.map((m) => participantMapper[m.email]);
                     n.emoticons = o.emoticons.map((e) => {
                         e.participant = participantMapper[e.participant.email];
-                        return { ...e, _id: new ObjectID() }
+                        let _id =  new ObjectID()
+                        e.reactionId = _id
+                        return { ...e, _id }
                     })
                     return n;
                 })
@@ -939,15 +943,19 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
 
                 //Goal
                 const goalCollection = db.collection("Goal");
-                goals = goals.map((o: GoalType) => {
+                const newGoals:any = [];
+                await asyncForEach(goals,async (o: GoalType) => {
                     let n = o as N_GoalType;
                     n._id = goalMapper[o.goalId];
                     n._partition = _partition;
                     if(n.kpi){
                         n.kpi = KPIMapper[o.kpi.id];
                     }
-                    // if(n.kpiId){
-                    //     // n.kpi = KPIMapper[o.kpi.id];
+                    // if(n.kpiId && n.kpiId.length>0){
+                    //     const kpi = await KPICollection.findOne({id:n.kpiId});
+                    //     if(kpi){
+                    //         n.kpiId = kpi.id;
+                    //     }
                     // }
                     if (n.nonRecurringResults) {
                         let _id = new ObjectID();
@@ -973,10 +981,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     if (n.zoneId) {
                         n.zoneId = zoneMapper[n.zoneId.zoneId]
                     }
-                    return n;
+                    newGoals.push(n);
                 })
-                if (goals.length > 0) {
-                    await goalCollection.insertMany(goals);
+                if (newGoals.length > 0) {
+                    await goalCollection.insertMany(newGoals);
                 }
 
                 //TemplateMetaData.
