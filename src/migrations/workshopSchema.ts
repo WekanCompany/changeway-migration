@@ -276,7 +276,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                                 _id = brainstormMapper[id] || null;
                                 break;
 
-        
+
 
                         }
                     }
@@ -303,8 +303,8 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 graph = graph.map((o: GraphType) => {
                     let n = o as N_GraphType;
                     n._id = graphMapper[o.graphId];
-                    if(n.owner){
-                        n.owner = n.owner.replace("_","|");
+                    if (n.owner) {
+                        n.owner = n.owner.replace("_", "|");
                     }
                     n._partition = _partition;
                     n.allData = o.allData.map((a) => ({ ...a, _id: new ObjectID() }))
@@ -332,7 +332,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                             const _id = new ObjectID();
                             let formula = recurring.formula as N_FormulaType;
                             formula._id = _id;
-                            formula._partition =  _partition;
+                            formula._partition = _partition;
                             // formula = omit(["id"], formula);
                             await FormulaCollection.insertOne(formula);
                             recurring.formula = _id;
@@ -351,7 +351,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                             const _id = new ObjectID();
                             let formula = nonRecurring.formula as N_FormulaType;
                             formula._id = _id;
-                            formula._partition =  _partition;
+                            formula._partition = _partition;
                             // formula = omit(["id"], formula);
                             await FormulaCollection.insertOne(formula);
                             nonRecurring.formula = _id;
@@ -360,7 +360,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                         kpi.nonRecurring = _id;
                     }
                     kpi._id = new ObjectID();
-                    kpi.kpiId =kpi.id;
+                    kpi.kpiId = kpi.id;
                     // kpi = omit(["id"], kpi);
                     kpi._partition = _partition
                     kpis.push(kpi._id);
@@ -378,10 +378,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n.top = XMatrixTriangleMapper[o.top.xMatrixTriangleId];
                     n.right = XMatrixTriangleMapper[o.right.xMatrixTriangleId];
                     n.bottom = XMatrixTriangleMapper[o.bottom.xMatrixTriangleId];
-                    if(n.template){
+                    if (n.template) {
                         n.template = templateMetaDataMapper[o.template.templateId];
                     }
-                  
+
                     if (n.step2RejectedBy) {
                         n.step2RejectedBy = participantMapper[n.step2RejectedBy.email]
                     }
@@ -411,8 +411,14 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n.linkedTriangle = o.linkedTriangle ? XMatrixTriangleMapper[o.linkedTriangle.xMatrixTriangleId] : null;
                     n.brainstorm = o.brainstorm ? brainstormMapper[o.brainstorm.brainstormId] : null;
 
-
-                    n.goals = o.goals.map((g) => XMatrixGoalMapper[g.xMatrixGoalId])
+                    n.goals = o.goals.map((g) => {
+                        let _id = null;
+                        _id = goalMapper[g.xMatrixGoalId];
+                        if (!_id) {
+                            _id = postItMapper[g.xMatrixGoalId];
+                        }
+                        return _id || XMatrixGoalMapper[g.xMatrixGoalId];
+                    });
                     // n.allData = o.allData.map((a) => ({ ...a, _id: new ObjectID() }))
                     return n;
                 })
@@ -426,7 +432,12 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 const XMatrixGoalColl = db.collection("XMatrixGoal");
                 XMatrixGoals = XMatrixGoals.map((o: XMatrixGoalType) => {
                     let n = o as any;
-                    n._id = XMatrixGoalMapper[o.xMatrixGoalId];
+                    let _id = null;
+                    _id = goalMapper[o.xMatrixGoalId];
+                    if (!_id) {
+                        _id = postItMapper[o.xMatrixGoalId];
+                    }
+                    n._id = _id || XMatrixGoalMapper[o.xMatrixGoalId];
                     n._partition = _partition;
 
                     n.goal = o.goal ? goalMapper[o.goal.goalId] : null;
@@ -611,7 +622,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n._id = boardCardMapper[o.cardId];
                     n._partition = _partition;
                     n.linkId = mapLinkId(n.type, n.linkId);
-                   
+
 
                     if (n.settings) {
                         const settings: any = n.settings;
@@ -683,7 +694,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     if (newParticipant.identity) {
                         newParticipant.identity = newParticipant.identity.replace("_", "|");
                     }
-                     // newParticipant = omit(["id"], newParticipant)
+                    // newParticipant = omit(["id"], newParticipant)
                     try {
                         await wParticipantCollection.insertOne(newParticipant);
                     } catch (e) {
@@ -732,7 +743,11 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_MajorMinorType;
                     n._id = majorMinorMapper[o.majorMinorId];
                     n._partition = _partition;
-                    n.linkedGoalId = goalMapper[o.linkedGoalId];
+                    let linkGoalId = goalMapper[o.linkedGoalId];
+                    if (!linkGoalId) {
+                        linkGoalId = postItMapper[o.linkedGoalId];
+                    }
+                    n.linkedGoalId = linkGoalId;
                     return n;
                 })
                 if (majorMinor.length > 0) {
@@ -822,8 +837,8 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     if (n.zoneId) {
                         n.zoneId = zoneMapper[o.zoneId]
                     }
-                    if(n.owner){
-                        n.owner = n.owner.replace("_","|");
+                    if (n.owner) {
+                        n.owner = n.owner.replace("_", "|");
                     }
                     return n;
                 })
@@ -842,8 +857,8 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     if (n.zoneId) {
                         n.zoneId = zoneMapper[o.zoneId]
                     }
-                    if(n.owner){
-                        n.owner = n.owner.replace("_","|");
+                    if (n.owner) {
+                        n.owner = n.owner.replace("_", "|");
                     }
                     return n;
                 })
@@ -868,7 +883,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n.mentions = o.mentions.map((m) => participantMapper[m.email]);
                     n.emoticons = o.emoticons.map((e) => {
                         e.participant = participantMapper[e.participant.email];
-                        let _id =  new ObjectID()
+                        let _id = new ObjectID()
                         e.reactionId = _id
                         return { ...e, _id }
                     })
@@ -891,6 +906,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n.assignees = o.assignees.map((m) => participantMapper[m.email]);
                     n.attachments = o.attachments.map(f => fileMapper[f.fileId]);
                     n.labels = o.labels.map(l => labelMapper[l._id]);
+
+                    if (n.linkedIssueId) {
+                        n.linkedIssueId = eventTaskMapper[o.linkedIssueId] || null;
+                    }
                     return n;
                 })
                 if (eventTask.length > 0) {
@@ -950,10 +969,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let n = o as N_GoalType;
                     n._id = goalMapper[o.goalId];
                     n._partition = _partition;
-                    if(n.kpi){
+                    if (n.kpi) {
                         n.kpi = KPIMapper[o.kpi.id];
                     }
-                   
+
                     if (n.nonRecurringResults) {
                         let _id = new ObjectID();
                         kpiResultsCollection.insertOne({ ...n.nonRecurringResults, _partition: _partition, _id });
@@ -1034,8 +1053,8 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 if (companiesMapper) {
                     n.company = companiesMapper[n.company];
                 }
-                if(n.facilitator){
-                    n.facilitator =n.facilitator.replace("_","|");
+                if (n.facilitator) {
+                    n.facilitator = n.facilitator.replace("_", "|");
                 }
                 n.participants = o.participants.map((p) => participantMapper[p.email]);
                 n.templates = o.templates.map((t) => templateMetaDataMapper[t.templateId]);
@@ -1074,7 +1093,9 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 }
                 n.labelList = o.labelList.map((l) => labelMapper[l._id]);
                 await workshopCollection.insertOne(n);
-
+                logger.info(
+                    _partitionString ? `Migrating Workshop ${workshopId} for Everyday of everybay board ${newWorkshopId} successful.` : `Migrating Workshop ${workshopId} successful.`
+                );
             } else {
                 logger.error(`Workshop ${workshopId} not found. So, Ignoring.`)
             }

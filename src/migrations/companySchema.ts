@@ -43,7 +43,8 @@ const MigrateCompanySchemas = (
             const templateIds = await templateIDCollection.find({}).toArray();
             const workshopIDCollection = idDb.collection("workshops");
             const workshopIds = await workshopIDCollection.find({}).toArray();
-            const UserCollection = db.collection("User");
+            const UserCollection: any = db.collection("User");
+            const participationsEmails: any = [];
             if (companyObject && companyObject.length > 0) {
                 const company: N_CompanyType = companyObject[0] as N_CompanyType;
                 (company._id = newCompanyId),
@@ -84,7 +85,7 @@ const MigrateCompanySchemas = (
                 }
                 company.logos = company.logos.map((x) => fileMapper[x.fileId]);
 
-              
+
 
                 const RevenueCollection = db.collection("Revenue");
                 const FormulaCollection = db.collection("Formula");
@@ -102,7 +103,7 @@ const MigrateCompanySchemas = (
                             const _id = new ObjectID();
                             let formula = recurring.formula as N_FormulaType;
                             formula._id = _id;
-                            formula._partition =  `companyRealm=${newCompanyId}`;
+                            formula._partition = `companyRealm=${newCompanyId}`;
                             // formula = omit(["id"], formula);
                             await FormulaCollection.insertOne(formula);
                             recurring.formula = _id;
@@ -121,7 +122,7 @@ const MigrateCompanySchemas = (
                             const _id = new ObjectID();
                             let formula = nonRecurring.formula as N_FormulaType;
                             formula._id = _id;
-                            formula._partition =  `companyRealm=${newCompanyId}`;
+                            formula._partition = `companyRealm=${newCompanyId}`;
                             // formula = omit(["id"], formula);
                             await FormulaCollection.insertOne(formula);
                             nonRecurring.formula = _id;
@@ -152,6 +153,7 @@ const MigrateCompanySchemas = (
                         newParticipant.identity = newParticipant.identity.replace("_", "|");
                     }
                     await participantCollection.insertOne(newParticipant);
+                    participationsEmails.push(newParticipant.email)
                     participants.push(newParticipant._id);
                 });
 
@@ -304,14 +306,13 @@ const MigrateCompanySchemas = (
                             if (existingWorkshopId) {
                                 n.realmUrl = `workshopRealm=${existingWorkshopId._id}`;
                                 //Add permission.
-                                await UserCollection.updateOne(
-                                    { userId },
-                                    { $push: { workshops: `workshopRealm=${existingWorkshopId._id}` } })
+                                await UserCollection.updateMany({ name: { $in: participationsEmails } }, { $push: { workshops: `workshopRealm=${existingWorkshopId._id}` } })
+
                             } else {
                                 const _id = new ObjectID();
                                 n.realmUrl = `workshopRealm=${_id}`;
                                 // n.templateId = _id;
-                                const key = `ids.[${workShopUUID}]`
+                                const key = `ids.${workShopUUID}`
                                 await idCollection.updateOne(
                                     {
                                         "user.id": userId,
@@ -330,10 +331,9 @@ const MigrateCompanySchemas = (
                                     { upsert: true }
                                 );
                                 await workshopIDCollection.insertOne({ _id, uuid: workShopUUID });
+                                //Add permission.
+                                await UserCollection.updateMany({ name: { $in: participationsEmails } }, { $push: { workshops: `workshopRealm=${_id}` } })
 
-                                await UserCollection.updateOne(
-                                    { userId },
-                                    { $push: { workshops: `workshopRealm=${_id}` } })
                             }
                         }
                     }
@@ -425,14 +425,14 @@ const MigrateCompanySchemas = (
                                 if (existingWorkshopId) {
                                     n.realmUrl = `workshopRealm=${existingWorkshopId._id}`;
                                     n.workshopId = existingWorkshopId._id;
-                                    await UserCollection.updateOne(
-                                        { userId },
-                                        { $push: { workshops: `workshopRealm=${existingWorkshopId._id}` } })
+                                    //Add permission.
+                                    await UserCollection.updateMany({ name: { $in: participationsEmails } }, { $push: { workshops: `workshopRealm=${existingWorkshopId._id}` } })
+
                                 } else {
                                     const _id = new ObjectID();
                                     n.realmUrl = `workshopRealm=${_id}`;
                                     n.workshopId = _id;
-                                    const key = `ids.[${workShopUUID}]`
+                                    const key = `ids.${workShopUUID}`
                                     await idCollection.updateOne(
                                         {
                                             "user.id": userId,
@@ -452,9 +452,7 @@ const MigrateCompanySchemas = (
                                     );
                                     await workshopIDCollection.insertOne({ _id, uuid: workShopUUID });
                                     //Add permission.
-                                    await UserCollection.updateOne(
-                                        { userId },
-                                        { $push: { workshops: `workshopRealm=${_id}` } })
+                                    await UserCollection.updateMany({ name: { $in: participationsEmails } }, { $push: { workshops: `workshopRealm=${_id}` } })
                                 }
                             } else {
                                 n.workshopId = null;
@@ -497,6 +495,9 @@ const MigrateCompanySchemas = (
                 } catch (e) {
                     console.log("Error Inserting the company");
                 }
+                logger.info(
+                    `Company ${companyId} migrated successfully`
+                  );
             } else {
                 logger.error(`Company ${companyId} not found. So, Ignoring.`);
 

@@ -5,6 +5,7 @@ build
 logs/
 
 user-list.json
+deletedWorkshops.json
 
 src-old/
 

@@ -19,7 +19,9 @@ export type ParetoOfGapsType = {
 		attachments: FileType[],
 		comments: CommentType[],
 		percentFreq: number,
-		percentLostTime: number
+		percentLostTime: number,
+		issueUUID:any
+
 }
 
 export const ParetoOfGaps = {

@@ -33,7 +33,8 @@ export type EventTaskType = {
 		isEscalated: boolean,
 		refNumber?: number,
 		labels: LabelType[],
-		issueType:string
+		issueType:string,
+		linkedIssueId:any|null
 }
 export const EventTask = {
 	name: "EventTask",
@@ -68,6 +69,7 @@ export const EventTask = {
 		isEscalated: { type: "bool", default: false },
 		refNumber: "int?",
 		labels: "Label[]",
+		linkedIssueId:"string?",
 		issueType: { type: "string", default: "Template" }
 	}
 };

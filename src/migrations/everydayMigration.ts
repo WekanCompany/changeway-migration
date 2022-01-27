@@ -376,12 +376,10 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                     e.everydayId = EverydayBoardMapper[e.everydayId._id];
                 }
 
-                if (e.issue && e.issue.length > 0) {
-                    e.issue = EventTaskMapper[e.issue] || null;
-                } else {
-                    e.issue = null;
-                }
+                e.issueUUID = e.issue;
+                e.issue = null;
 
+        
                 e.comments = e.comments.map((c) => {
                     return CommentMapper[c.commentId];
                 })
@@ -430,11 +428,14 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 if (e.missIssue) {
                     e.missIssue = MissIssueMapper[e.missIssue._id];
                 }
-                if (e.issue && e.issue.length > 0) {
-                    e.issue = EventTaskMapper[e.issue] || null;
-                } else {
-                    e.issue = null;
-                }
+                e.issueUUID =  e.issue ;
+                e.issue = null;
+              
+                // if (e.issue && e.issue.length > 0) {
+                //     e.issue = EventTaskMapper[e.issue] || null;
+                // } else {
+                //     e.issue = null;
+                // }
 
                 e.comments = e.comments.map((c) => {
                     return CommentMapper[c.commentId];
@@ -513,6 +514,9 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 n.assignees = o.assignees.map((m) => ParticipantMapper[m.id]);
                 n.attachments = o.attachments.map(f => FilesMapper[f.fileId]);
                 n.labels = o.labels.map(l => LabelMapper[l._id]);
+                if(n.linkedIssueId){
+                    n.linkedIssueId = EventTaskMapper[o.linkedIssueId] || null;
+                }
                 return n;
             })
             if (EventTask.length > 0) {
@@ -544,6 +548,10 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
             if (Action.length > 0) {
                 await ActionColl.insertMany(Action);
             }
+
+            logger.info(
+                `Migrating Every for company ${companyId} is successful.`
+            );
 
             return resolve(true)
         } catch (e) {

@@ -6,21 +6,22 @@ import { MissReasonType } from "./MissReason";
 
 export type ReasonForMissType = {
 	_id: string,
-		missReasonId: string | null,
-		missReason: MissReasonType,
-		reason: string,
-		dimension: DimensionType,
-		everydayId: EverydayBoardType,
-		lostTime: number,
-		lostTimeInDays?: number,
-		lostTimeInHours?: number,
-		lostTimeInMinutes?: number,
-		lostTimeInSeconds?:number,
-		lostTimeDataFormat: string,
-		attachments: FileType[],
-		comments: CommentType[],
-		issue: string | null,
-		dailyData: any
+	missReasonId: string | null,
+	missReason: MissReasonType,
+	reason: string,
+	dimension: DimensionType,
+	everydayId: EverydayBoardType,
+	lostTime: number,
+	lostTimeInDays?: number,
+	lostTimeInHours?: number,
+	lostTimeInMinutes?: number,
+	lostTimeInSeconds?: number,
+	lostTimeDataFormat: string,
+	attachments: FileType[],
+	comments: CommentType[],
+	issue: string | null,
+	issueUUID: any;
+	dailyData: any
 }
 
 export const ReasonForMiss = {

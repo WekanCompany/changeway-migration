@@ -3,8 +3,16 @@ import winston from "winston";
 import { Db, MongoClient } from "mongodb";
 import Realm from "realm";
 import { asyncForEach, initLogger, openRealm } from "./utils";
-import { CompanySchema, EverydaySchema, GlobalKPI, GlobalUserAndNotification, UserSchema, WorkshopSchema } from "./models/ros";
+import {
+  CompanySchema,
+  EverydaySchema,
+  GlobalKPI,
+  GlobalUserAndNotification,
+  UserSchema,
+  WorkshopSchema,
+} from "./models/ros";
 import UserList from "./../user-list.json";
+import DeletedWorkshopsList from "./../deletedWorkshops.json";
 import MigrateGlobalUserAndNotification from "./migrations/globalUserAndNotifications";
 import MigrateUserSchemas from "./migrations/userSchema";
 import MigrateGlobalKPI from "./migrations/globalKPIMigrations";
@@ -26,7 +34,8 @@ let targetMongoDBName: string;
 
 let db: Db;
 let idDB: Db;
-let userIds: any
+let userIds: any;
+let deletedWorkshopId: any;
 
 // Logger
 let logDirPath;
@@ -56,17 +65,29 @@ logger.info(
 const userIDRunner = async () => {
   return new Promise(async (resolve, reject) => {
     userIds = {};
+    deletedWorkshopId = [];
     // Map User Id's.
     const { User }: any = UserList;
     if (User) {
       User.forEach((user: any) => {
         const { userId }: any = user;
-        if (userId === "auth0|5e70a6d23119a80c87e2d085" || userId === "auth0|6095329d449d2a0068d829ef" || userId === "auth0|5e70a715c190f70c8ab66ce7" || userId === "auth0|5f846a94d096aa006e7bc587") {
+        if (
+          userId === "auth0|5e70a6d23119a80c87e2d085" ||
+          userId === "auth0|6095329d449d2a0068d829ef" ||
+          userId === "auth0|5e70a715c190f70c8ab66ce7" ||
+          userId === "auth0|5f846a94d096aa006e7bc587"
+        ) {
           userIds[userId] = new ObjectID();
         }
       });
-      resolve(true)
     }
+    const { DeletedWorkshops }: any = DeletedWorkshopsList;
+    if (DeletedWorkshops) {
+      deletedWorkshopId = DeletedWorkshops.map(
+        (d: any) => d.deletedWorkshopsId
+      );
+    }
+    resolve(true);
   });
 };
 
@@ -160,7 +181,6 @@ const migrate = async () => {
         //   globalKPI.close()
         // }
 
-
         // Step 5.
         /**
          * Migrate Global Schemas.
@@ -184,60 +204,83 @@ const migrate = async () => {
          * Migrate User Schema
          */
         const userIdKeys = Object.keys(userIds);
-        logger.info(
-          `Migrating totally ${userIdKeys.length} Users.`
-        );
+        logger.info(`Migrating totally ${userIdKeys.length} Users.`);
         await asyncForEach(userIdKeys, async (userId) => {
           const userSchema = await openRealm(
             user,
-            `realms://${realmServerUrl}/${userId.replace("|", "_")}/userProfile`,
+            `realms://${realmServerUrl}/${userId.replace(
+              "|",
+              "_"
+            )}/userProfile`,
             UserSchema,
-            logger,
+            logger
           );
           if (userSchema) {
-            await MigrateUserSchemas(userId, userIds[userId], userSchema, db, logger, idDB);
-            userSchema.close()
+            await MigrateUserSchemas(
+              userId,
+              userIds[userId],
+              userSchema,
+              db,
+              logger,
+              idDB
+            );
+            userSchema.close();
           }
         });
-
 
         // // Step 7.
         // /**
         //  * Migrate User Organisation Schemas(Company Schemas).
         //  */
-        const idCol = idDB.collection('id');
+        const idCol = idDB.collection("id");
 
         const companies = await idCol.find({ type: "company" }).toArray();
-        logger.info(
-          `Migrating totally ${companies.length} Users Companies.`
-        );
+        logger.info(`Migrating totally ${companies.length} Users Companies.`);
         await asyncForEach(companies, async (info) => {
           let ids = info.ids;
           ids = Object.keys(ids);
-          logger.info(
-            `User ${info.user.id} has ${ids.length} Companies.`
-          );
+          logger.info(`User ${info.user.id} has ${ids.length} Companies.`);
           await asyncForEach(ids, async (companyId: string) => {
             try {
-              if (["69f8a4c0-e5f1-41a3-afbe-eca530c21fff"].indexOf(companyId) !== -1) { //Omit this company, taking more time to migrate.
-                return
+              if (
+                ["69f8a4c0-e5f1-41a3-afbe-eca530c21fff"].indexOf(companyId) !==
+                -1
+              ) {
+                //Omit this company, taking more time to migrate.
+                return;
               }
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
               const companyRealm = await openRealm(
                 user,
-                `realms://${realmServerUrl}/${info.user.id.replace("|", "_")}/company/${companyId}`,
+                `realms://${realmServerUrl}/${info.user.id.replace(
+                  "|",
+                  "_"
+                )}/company/${companyId}`,
                 CompanySchema,
-                logger,
+                logger
               );
               if (companyRealm) {
-                await MigrateCompanySchemas(companyId, info.ids[companyId], info.user, companyRealm, db, logger, idDB, userIds)
-                companyRealm.close()
+                await MigrateCompanySchemas(
+                  companyId,
+                  info.ids[companyId],
+                  info.user,
+                  companyRealm,
+                  db,
+                  logger,
+                  idDB,
+                  userIds
+                );
+                companyRealm.close();
               }
             } catch (e) {
-              logger.error(`Problem connection to the specific realm - realms://${realmServerUrl}/${info.user.id.replace("|", "_")}/company/${companyId}`)
+              logger.error(
+                `Problem connection to the specific realm - realms://${realmServerUrl}/${info.user.id.replace(
+                  "|",
+                  "_"
+                )}/company/${companyId}`
+              );
             }
-          })
-
+          });
         });
 
         // Step 8.
@@ -245,29 +288,58 @@ const migrate = async () => {
          * Migrate Workshop Schemas.
          */
         const workshops = await idCol.find({ type: "workshop" }).toArray();
-        logger.info(
-          `Migrating totally ${workshops.length} User's Workshops.`
-        );
+        logger.info(`Migrating totally ${workshops.length} User's Workshops.`);
 
         await asyncForEach(workshops, async (workshop) => {
           let ids = workshop.ids;
           ids = Object.keys(ids);
           await asyncForEach(ids, async (workshopId: string) => {
+            // Add Deleted Workshops Logic
 
-            if (["2de0fd49-59ee-4172-ad50-096507abdd24", "5762fc36-7f1b-436a-8a65-74dc53f3c6b2", "58c788d8-57a3-4f9c-b16b-472c346147dd", "99c6e913-3c92-4469-9ffe-cb81f56f6506"].indexOf(workshopId) === -1) {
-              return
+            // if(deletedWorkshopId.indexOf(workshopId)>=0){
+            //   return;
+            // }
+
+            if (
+              [
+                "0999c84a-f55b-4278-9f1a-caa60e2e4941",
+                "72790171-3bb1-42e5-947d-a6bcf9120e38",
+                "7c95e71f-ee9f-4c4b-8aeb-41ecaa17c6b6",
+                "d170a020-810f-4bac-8805-5e75e5782f89",
+                "f46f3bb9-6bd1-4f25-930e-485eddbc1803",
+                "2de0fd49-59ee-4172-ad50-096507abdd24",
+                "5762fc36-7f1b-436a-8a65-74dc53f3c6b2",
+                "58c788d8-57a3-4f9c-b16b-472c346147dd",
+                "99c6e913-3c92-4469-9ffe-cb81f56f6506",
+                "95885cb9-0e2c-4adc-9d35-3c9ad23916f3",
+                "d9d04657-52a7-4be9-8165-39332c1a5f12",
+              ].indexOf(workshopId) === -1
+            ) {
+              return;
             }
+
             try {
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
               const workshopRealm = await openRealm(
                 user,
-                `realms://${realmServerUrl}/${workshop.user.id.replace("|", "_")}/workshop/${workshopId}`,
+                `realms://${realmServerUrl}/${workshop.user.id.replace(
+                  "|",
+                  "_"
+                )}/workshop/${workshopId}`,
                 WorkshopSchema,
                 logger
               );
               if (workshopRealm) {
-                await MigrateWorkshopSchemas(workshopId, workshop.ids[workshopId], workshop.user, workshopRealm, db, logger, idDB)
-                workshopRealm.close()
+                await MigrateWorkshopSchemas(
+                  workshopId,
+                  workshop.ids[workshopId],
+                  workshop.user,
+                  workshopRealm,
+                  db,
+                  logger,
+                  idDB
+                );
+                workshopRealm.close();
               }
             } catch (e) {
               console.log(e);
@@ -276,12 +348,10 @@ const migrate = async () => {
           });
         });
 
-
         // Step 9.
         /**
          * Migrate Everyday Schemas.
          */
-
 
         await asyncForEach(companies, async (info: any) => {
           let ids = info.ids;
@@ -291,31 +361,41 @@ const migrate = async () => {
           );
           await asyncForEach(ids, async (companyId: string) => {
             try {
-              if (["0839822c-e821-41b8-9698-830a9ffe2a3c"].indexOf(companyId) === -1) {
-                return
+              if (
+                ["0839822c-e821-41b8-9698-830a9ffe2a3c"].indexOf(companyId) ===
+                -1
+              ) {
+                return;
               }
 
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1/everyday
               const everyDayRealm = await openRealm(
                 user,
-                `realms://${realmServerUrl}/${info.user.id.replace("|", "_")}/company/${companyId}/everyday`,
+                `realms://${realmServerUrl}/${info.user.id.replace(
+                  "|",
+                  "_"
+                )}/company/${companyId}/everyday`,
                 EverydaySchema,
-                logger,
+                logger
               );
               if (everyDayRealm) {
-                await MigrateEverydaySchemas(companyId, info.ids[companyId], info.user, everyDayRealm, db, logger, idDB)
-                everyDayRealm.close()
+                await MigrateEverydaySchemas(
+                  companyId,
+                  info.ids[companyId],
+                  info.user,
+                  everyDayRealm,
+                  db,
+                  logger,
+                  idDB
+                );
+                everyDayRealm.close();
               }
             } catch (e) {
               console.log(e);
               reject(e);
             }
-          })
-
+          });
         });
-
-
-
 
         // Step 10.
         /**
@@ -323,9 +403,10 @@ const migrate = async () => {
          */
 
         const everydayWorkshopIds = idDB.collection("everydayworkshops");
-        const everyDayBoards: any = await everydayWorkshopIds.find({}).toArray();
+        const everyDayBoards: any = await everydayWorkshopIds
+          .find({})
+          .toArray();
         await asyncForEach(everyDayBoards, async (eB: any) => {
-
           logger.info(
             `Migrating Everybay board ${eB.uuid} of the user ${eB.user.id}.`
           );
@@ -333,26 +414,81 @@ const migrate = async () => {
             // realms://changeway-development.de1a.cloud.realm.io//auth0_5d25f12c647c510cb7f8c1d9/company/67f32310-eadb-4f3b-a920-7c80fa45bc4b/everyday/workshop/2073b74c-0478-4ba5-ab2a-51cb44a56b25
             const everyDayRealm = await openRealm(
               user,
-              `realms://${realmServerUrl}/${eB.user.id.replace("|", "_")}/company/${eB.company.companyId}/everyday/workshop/${eB.uuid}`,
+              `realms://${realmServerUrl}/${eB.user.id.replace(
+                "|",
+                "_"
+              )}/company/${eB.company.companyId}/everyday/workshop/${eB.uuid}`,
               WorkshopSchema,
-              logger,
+              logger
             );
             if (everyDayRealm) {
               const { company, user, boardId, uuid } = eB;
-              await MigrateWorkshopSchemas(uuid, boardId, user, everyDayRealm, db, logger, idDB, `everydayRealm=true&companyRealm=${company.newCompanyId}&workshopRealm=${boardId}`)
-              everyDayRealm.close()
+              await MigrateWorkshopSchemas(
+                uuid,
+                boardId,
+                user,
+                everyDayRealm,
+                db,
+                logger,
+                idDB,
+                `everydayRealm=true&companyRealm=${company.newCompanyId}&workshopRealm=${boardId}`
+              );
+              everyDayRealm.close();
             }
           } catch (e) {
             console.log(e);
             reject(e);
           }
-
         });
 
+        logger.info(`After Migration Patch Works.`);
+        //After Migration Patch Works.
+        //1) ParetoOfGapsColl.
+        const ParetoOfGapsColl = db.collection("ParetoOfGaps");
+        const EventTaskColl = db.collection("EventTask");
+        const listOfParetoOfGaps = await ParetoOfGapsColl.find({
+          issueUUID: { $ne: null },
+        }).toArray();
+
+        await asyncForEach(listOfParetoOfGaps, async (pG: any) => {
+          try {
+            const eventTask = await EventTaskColl.findOne({
+              cardId: pG.issueUUID,
+            });
+            if (eventTask) {
+              await ParetoOfGapsColl.updateOne(
+                { _id: pG._id },
+                { $set: { issue: eventTask._id } }
+              );
+            }
+          } catch (e) {
+            console.log(e);
+          }
+        });
+        const ReasonForMissColl = db.collection("ReasonForMiss");
+        const listOfRFM = await ReasonForMissColl.find({
+          issueUUID: { $ne: null },
+        }).toArray();
+
+        await asyncForEach(listOfRFM, async (rm: any) => {
+          try {
+            const eventTask = await EventTaskColl.findOne({
+              cardId: rm.issueUUID,
+            });
+            if (eventTask) {
+              await ReasonForMissColl.updateOne(
+                { _id: rm._id },
+                { $set: { issue: eventTask._id } }
+              );
+            }
+          } catch (e) {
+            console.log(e);
+          }
+        });
         resolve(true);
       });
     } catch (e) {
-      console.log(e)
+      console.log(e);
       reject(e);
     }
   });
