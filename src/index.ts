@@ -67,18 +67,22 @@ const userIDRunner = async () => {
     userIds = {};
     deletedWorkshopId = [];
     // Map User Id's.
-    const { User }: any = UserList;
-    if (User) {
-      User.forEach((user: any) => {
-        const { userId }: any = user;
-        if (
-          userId === "auth0|5e70a6d23119a80c87e2d085" ||
-          userId === "auth0|6095329d449d2a0068d829ef" ||
-          userId === "auth0|5e70a715c190f70c8ab66ce7" ||
-          userId === "auth0|5f846a94d096aa006e7bc587"
-        ) {
+    const { Account }: any = UserList;
+    if (Account) {
+      Account.forEach((user: any) => {
+        const { providerId: userId }: any = user;
+        // if (
+        //   userId === "auth0|5e70a6d23119a80c87e2d085" ||
+        //   userId === "auth0|6095329d449d2a0068d829ef" ||
+        //   userId === "auth0|5e70a715c190f70c8ab66ce7" ||
+        //   userId === "auth0|5f846a94d096aa006e7bc587"
+        // ) {
+        // userIds[userId] = new ObjectID();
+        // }
+        if (userId.startsWith("auth0|")) {
           userIds[userId] = new ObjectID();
         }
+
       });
     }
     const { DeletedWorkshops }: any = DeletedWorkshopsList;
@@ -107,6 +111,7 @@ const userIDRunner = async () => {
  *  - Step8 - Migrate Workshop Schemas.
  *  - Step9 - Migrate Everyday Schemas.
  *  - Step10 - Migrate Workshops for Everyday Schemas.
+ *  - Step11 - Patch works after migration.
  *
  */
 
@@ -170,16 +175,16 @@ const migrate = async () => {
         logger.info(
           `Migration of Global KPI: realms://${realmServerUrl}/GlobalKPI`
         );
-        // const globalKPI: any = await openRealm(
-        //   user,
-        //   `realms://${realmServerUrl}/GlobalKPI`,
-        //   GlobalKPI,
-        //   logger
-        // );
-        // if (globalKPI) {
-        //   await MigrateGlobalKPI(globalKPI, db, logger, idDB);
-        //   globalKPI.close()
-        // }
+        const globalKPI: any = await openRealm(
+          user,
+          `realms://${realmServerUrl}/GlobalKPI`,
+          GlobalKPI,
+          logger
+        );
+        if (globalKPI) {
+          await MigrateGlobalKPI(globalKPI, db, logger, idDB);
+          globalKPI.close()
+        }
 
         // Step 5.
         /**
@@ -188,16 +193,16 @@ const migrate = async () => {
         logger.info(
           `Migration Global User and Notifications from path: realms://${realmServerUrl}/GlobalUserAndNotification`
         );
-        // const globalUserRealm: any = await openRealm(
-        //   user,
-        //   `realms://${realmServerUrl}/GlobalUserAndNotification`,
-        //   GlobalUserAndNotification,
-        //   logger
-        // );
-        // if (globalUserRealm) {
-        //   await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
-        //   globalUserRealm.close()
-        // }
+        const globalUserRealm: any = await openRealm(
+          user,
+          `realms://${realmServerUrl}/GlobalUserAndNotification`,
+          GlobalUserAndNotification,
+          logger
+        );
+        if (globalUserRealm) {
+          await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
+          globalUserRealm.close()
+        }
 
         // Step 6.
         /**
@@ -296,27 +301,28 @@ const migrate = async () => {
           await asyncForEach(ids, async (workshopId: string) => {
             // Add Deleted Workshops Logic
 
-            // if(deletedWorkshopId.indexOf(workshopId)>=0){
-            //   return;
-            // }
-
-            if (
-              [
-                "0999c84a-f55b-4278-9f1a-caa60e2e4941",
-                "72790171-3bb1-42e5-947d-a6bcf9120e38",
-                "7c95e71f-ee9f-4c4b-8aeb-41ecaa17c6b6",
-                "d170a020-810f-4bac-8805-5e75e5782f89",
-                "f46f3bb9-6bd1-4f25-930e-485eddbc1803",
-                "2de0fd49-59ee-4172-ad50-096507abdd24",
-                "5762fc36-7f1b-436a-8a65-74dc53f3c6b2",
-                "58c788d8-57a3-4f9c-b16b-472c346147dd",
-                "99c6e913-3c92-4469-9ffe-cb81f56f6506",
-                "95885cb9-0e2c-4adc-9d35-3c9ad23916f3",
-                "d9d04657-52a7-4be9-8165-39332c1a5f12",
-              ].indexOf(workshopId) === -1
-            ) {
+            if (deletedWorkshopId.indexOf(workshopId) >= 0) {
+              logger.error(`${workshopId} is on the Deleted Workshop list, so Ignoring.`);
               return;
             }
+
+            // if (
+            //   [
+            //     "0999c84a-f55b-4278-9f1a-caa60e2e4941",
+            //     "72790171-3bb1-42e5-947d-a6bcf9120e38",
+            //     "7c95e71f-ee9f-4c4b-8aeb-41ecaa17c6b6",
+            //     "d170a020-810f-4bac-8805-5e75e5782f89",
+            //     "f46f3bb9-6bd1-4f25-930e-485eddbc1803",
+            //     "2de0fd49-59ee-4172-ad50-096507abdd24",
+            //     "5762fc36-7f1b-436a-8a65-74dc53f3c6b2",
+            //     "58c788d8-57a3-4f9c-b16b-472c346147dd",
+            //     "99c6e913-3c92-4469-9ffe-cb81f56f6506",
+            //     "95885cb9-0e2c-4adc-9d35-3c9ad23916f3",
+            //     "d9d04657-52a7-4be9-8165-39332c1a5f12",
+            //   ].indexOf(workshopId) === -1
+            // ) {
+            //   return;
+            // }
 
             try {
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
@@ -361,12 +367,12 @@ const migrate = async () => {
           );
           await asyncForEach(ids, async (companyId: string) => {
             try {
-              if (
-                ["0839822c-e821-41b8-9698-830a9ffe2a3c"].indexOf(companyId) ===
-                -1
-              ) {
-                return;
-              }
+              // if (
+              //   ["0839822c-e821-41b8-9698-830a9ffe2a3c"].indexOf(companyId) ===
+              //   -1
+              // ) {
+              //   return;
+              // }
 
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1/everyday
               const everyDayRealm = await openRealm(
@@ -447,7 +453,7 @@ const migrate = async () => {
         const ParetoOfGapsColl = db.collection("ParetoOfGaps");
         const EventTaskColl = db.collection("EventTask");
         const listOfParetoOfGaps = await ParetoOfGapsColl.find({
-          issueUUID: { $ne: null },
+          issueUUID: { "$exists": true, "$ne": "" },
         }).toArray();
 
         await asyncForEach(listOfParetoOfGaps, async (pG: any) => {
@@ -467,7 +473,7 @@ const migrate = async () => {
         });
         const ReasonForMissColl = db.collection("ReasonForMiss");
         const listOfRFM = await ReasonForMissColl.find({
-          issueUUID: { $ne: null },
+          issueUUID: { "$exists": true, "$ne": "" },
         }).toArray();
 
         await asyncForEach(listOfRFM, async (rm: any) => {
