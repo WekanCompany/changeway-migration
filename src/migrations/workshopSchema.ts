@@ -1039,19 +1039,15 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
 
 
                 const workshopCollection = db.collection("Workshop");
-                const idsCollection = idDb.collection('id');
-
-                let companiesMapper = await idsCollection.findOne({ type: "company", "user.id": user.id });
-                if (companiesMapper) {
-                    companiesMapper = companiesMapper.ids;
-                }
+                const companiesCollection = idDb.collection('companies');
                 const o = workshopObject[0];
                 const n = workshopObject[0] as N_WorkshopType;
-
+                let companiesMapper = await companiesCollection.findOne({ uuid: n.company });
+                
                 n._id = newWorkshopId,
                     n._partition = _partition;
                 if (companiesMapper) {
-                    n.company = companiesMapper[n.company];
+                    n.company = companiesMapper._id;
                 }
                 if (n.facilitator) {
                     n.facilitator = n.facilitator.replace("_", "|");

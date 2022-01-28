@@ -98,6 +98,7 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
                     }
                     workshopMapper[w.workshopId] = _id;
                     w.workshopId = _id;
+                    w.realmPath = w.url;
                     w.url = `workshopRealm=${_id}`
                     workshops.push({ ...w, _id });
                 });
@@ -129,7 +130,7 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
                 const UserCollection = db.collection("User");
                 await UserCollection.insertOne(user);
                 await IDCollection.insertOne({ type: "company", ids: companyMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id } });
-                await IDCollection.insertOne({ type: "workshop", ids: workshopMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id } });
+                // await IDCollection.insertOne({ type: "workshop", ids: workshopMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id } });
                 if(newWorkshopIds.length>0){
                     await workshopsIdCollection.insertMany(newWorkshopIds);
                 }

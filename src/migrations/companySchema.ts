@@ -42,7 +42,7 @@ const MigrateCompanySchemas = (
             const idCollection = idDb.collection("id");
             const templateIds = await templateIDCollection.find({}).toArray();
             const workshopIDCollection = idDb.collection("workshops");
-            const workshopIds = await workshopIDCollection.find({}).toArray();
+            // const workshopIds = await workshopIDCollection.find({}).toArray();
             const UserCollection: any = db.collection("User");
             const participationsEmails: any = [];
             if (companyObject && companyObject.length > 0) {
@@ -292,7 +292,7 @@ const MigrateCompanySchemas = (
                     if (!n.deleted) {
                         let realmUrlSplit = n.realmUrl
                             .replace(
-                                "realms://changeway-development.de1a.cloud.realm.io/",
+                                `realms://${process.env.REALM_SERVER_URL}/`,
                                 ""
                             )
                             .split("/");
@@ -300,9 +300,10 @@ const MigrateCompanySchemas = (
                             ///auth0_5e70a715c190f70c8ab66ce7/workshop/f2fba1e4-60d9-4caf-809f-95671f0a8c4d
                             const workShopUUID = realmUrlSplit[2];
                             const userId = realmUrlSplit[0].replace("_", "|");
-                            const existingWorkshopId = workshopIds.find(
-                                (x: any) => x.uuid === workShopUUID
-                            );
+                            const existingWorkshopId =  await workshopIDCollection.findOne({ uuid: workShopUUID });
+                            // workshopIds.find(
+                            //     (x: any) => x.uuid === workShopUUID
+                            // );
                             if (existingWorkshopId) {
                                 n.realmUrl = `workshopRealm=${existingWorkshopId._id}`;
                                 //Add permission.
@@ -411,7 +412,7 @@ const MigrateCompanySchemas = (
                         if (!n.deleted) {
                             let realmUrlSplit = n.realmUrl
                                 .replace(
-                                    "realms://changeway-development.de1a.cloud.realm.io/",
+                                    `realms://${process.env.REALM_SERVER_URL}/`,
                                     ""
                                 )
                                 .split("/");
@@ -419,9 +420,7 @@ const MigrateCompanySchemas = (
                                 ///auth0_5e70a715c190f70c8ab66ce7/workshop/f2fba1e4-60d9-4caf-809f-95671f0a8c4d
                                 const workShopUUID = realmUrlSplit[2];
                                 const userId = realmUrlSplit[0].replace("_", "|");
-                                const existingWorkshopId = workshopIds.find(
-                                    (x: any) => x.uuid === workShopUUID
-                                );
+                                const existingWorkshopId =  await workshopIDCollection.findOne({ uuid: workShopUUID });
                                 if (existingWorkshopId) {
                                     n.realmUrl = `workshopRealm=${existingWorkshopId._id}`;
                                     n.workshopId = existingWorkshopId._id;

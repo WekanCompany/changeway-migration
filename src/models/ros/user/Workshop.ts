@@ -2,6 +2,7 @@
 export type WorkshopType = {
 	workshopId: string,
 	url: string,
+	realmPath:string;
 	name: string,
 	status: string,
 	startDate: Date,

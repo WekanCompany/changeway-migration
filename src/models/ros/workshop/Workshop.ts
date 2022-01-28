@@ -15,7 +15,7 @@ export type WorkshopType = {
 	name: string,
 	description: string,
 	facilitator: string,
-	company: string,
+	company: string|any,
 	companyName?: string,
 	startDate: Date,
 	endDate: Date,

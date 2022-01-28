@@ -65,25 +65,32 @@ logger.info(
 const userIDRunner = async () => {
   return new Promise(async (resolve, reject) => {
     userIds = {};
+    let userIdsArray:any=[];
     deletedWorkshopId = [];
     // Map User Id's.
     const { Account }: any = UserList;
     if (Account) {
       Account.forEach((user: any) => {
         const { providerId: userId }: any = user;
-        // if (
-        //   userId === "auth0|5e70a6d23119a80c87e2d085" ||
-        //   userId === "auth0|6095329d449d2a0068d829ef" ||
-        //   userId === "auth0|5e70a715c190f70c8ab66ce7" ||
-        //   userId === "auth0|5f846a94d096aa006e7bc587"
-        // ) {
-        // userIds[userId] = new ObjectID();
-        // }
-        if (userId.startsWith("auth0|")) {
-          userIds[userId] = new ObjectID();
+        if (
+          userId === "auth0|5e8f20094909340c15125d87" ||
+          userId === "auth0|5f846a94d096aa006e7bc587"
+        ) {
+          let _id= new ObjectID();
+          userIds[userId] = _id;
+          userIdsArray.push({uuid:userId, _id})
         }
-
+        // if (userId.startsWith("auth0|")) {
+        //   let _id= new ObjectID();
+        //   userIds[userId] = _id;
+        //   userIdsArray.push({uuid:userId, _id})
+        // }
+        
       });
+      const userIdColl= idDB.collection("userIdColl");
+        if(userIdsArray.length>0){
+          await userIdColl.insertMany(userIdsArray);
+        }
     }
     const { DeletedWorkshops }: any = DeletedWorkshopsList;
     if (DeletedWorkshops) {
@@ -101,14 +108,15 @@ const userIDRunner = async () => {
  *
  * Migration Process steps are as follows.
  *
- *  - Step1 - Mapping User Id's to equivalent Object Id and store in a JSON file for usage.
- *  - Step2 - Connect to MONGODB Client.
+ *  - Step1 - Connect to MONGODB Client.
+ *  - Step2 - Mapping User Id's to equivalent Object Id and store in a JSON file for usage.
  *  - Step3 - Create a Realm Credentials and login to ROS.
  *  - Step4 - Migrate Global Users and Notifications.
  *  - Step5 - Migrate Global KPI.
  *  - Step6 - Migrate User Schema.
  *  - Step7 - Migrate Company Schemas.
  *  - Step8 - Migrate Workshop Schemas.
+ *  - Step8.1 - Migrate Workshop schemas for Single and Organization Templates.
  *  - Step9 - Migrate Everyday Schemas.
  *  - Step10 - Migrate Workshops for Everyday Schemas.
  *  - Step11 - Patch works after migration.
@@ -118,19 +126,9 @@ const userIDRunner = async () => {
 const migrate = async () => {
   return new Promise(async (resolve, reject) => {
     try {
-      // Step1.
-      /**
-       * User Id Mapper.
-       */
-      if (!UserList) {
-        return reject(
-          "User List is required to proceed. Please add a user-list.json file on the root directory downloaded from ROS."
-        );
-      }
-      //User Id's Runner.
-      await userIDRunner();
 
-      // Step2.
+
+      // Step1.
       /**
        * Connect to the DB.
        */
@@ -154,6 +152,18 @@ const migrate = async () => {
           process.exit(0);
         }
 
+        // Step2.
+        /**
+         * User Id Mapper.
+         */
+        if (!UserList) {
+          return reject(
+            "User List is required to proceed. Please add a user-list.json file on the root directory downloaded from ROS."
+          );
+        }
+        //User Id's Runner.
+        await userIDRunner();
+
         // Step3.
         /**
          * Create a realm credential and login.
@@ -175,16 +185,16 @@ const migrate = async () => {
         logger.info(
           `Migration of Global KPI: realms://${realmServerUrl}/GlobalKPI`
         );
-        const globalKPI: any = await openRealm(
-          user,
-          `realms://${realmServerUrl}/GlobalKPI`,
-          GlobalKPI,
-          logger
-        );
-        if (globalKPI) {
-          await MigrateGlobalKPI(globalKPI, db, logger, idDB);
-          globalKPI.close()
-        }
+        // const globalKPI: any = await openRealm(
+        //   user,
+        //   `realms://${realmServerUrl}/GlobalKPI`,
+        //   GlobalKPI,
+        //   logger
+        // );
+        // if (globalKPI) {
+        //   await MigrateGlobalKPI(globalKPI, db, logger, idDB);
+        //   globalKPI.close()
+        // }
 
         // Step 5.
         /**
@@ -193,16 +203,16 @@ const migrate = async () => {
         logger.info(
           `Migration Global User and Notifications from path: realms://${realmServerUrl}/GlobalUserAndNotification`
         );
-        const globalUserRealm: any = await openRealm(
-          user,
-          `realms://${realmServerUrl}/GlobalUserAndNotification`,
-          GlobalUserAndNotification,
-          logger
-        );
-        if (globalUserRealm) {
-          await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
-          globalUserRealm.close()
-        }
+        // const globalUserRealm: any = await openRealm(
+        //   user,
+        //   `realms://${realmServerUrl}/GlobalUserAndNotification`,
+        //   GlobalUserAndNotification,
+        //   logger
+        // );
+        // if (globalUserRealm) {
+        //   await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
+        //   globalUserRealm.close()
+        // }
 
         // Step 6.
         /**
@@ -247,13 +257,13 @@ const migrate = async () => {
           logger.info(`User ${info.user.id} has ${ids.length} Companies.`);
           await asyncForEach(ids, async (companyId: string) => {
             try {
-              if (
-                ["69f8a4c0-e5f1-41a3-afbe-eca530c21fff"].indexOf(companyId) !==
-                -1
-              ) {
-                //Omit this company, taking more time to migrate.
-                return;
-              }
+              // if (
+              //   ["69f8a4c0-e5f1-41a3-afbe-eca530c21fff"].indexOf(companyId) !==
+              //   -1
+              // ) {
+              //   //Omit this company, taking more time to migrate.
+              //   return;
+              // }
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
               const companyRealm = await openRealm(
                 user,
@@ -292,17 +302,33 @@ const migrate = async () => {
         /**
          * Migrate Workshop Schemas.
          */
-        const workshops = await idCol.find({ type: "workshop" }).toArray();
-        logger.info(`Migrating totally ${workshops.length} User's Workshops.`);
+        const profileCollection = await db.collection("Profile");
+        const workshopCollection = await db.collection("Workshop");
+        const workshopIdsCollection = await idDB.collection("workshops");
+        const profiles = await profileCollection.find({}).toArray();
+        logger.info(`Migrating totally ${profiles.length} User's Workshops.`);
 
-        await asyncForEach(workshops, async (workshop) => {
-          let ids = workshop.ids;
-          ids = Object.keys(ids);
-          await asyncForEach(ids, async (workshopId: string) => {
+        await asyncForEach(profiles, async (profile) => {//Jon
+          let ids = profile.workshops;
+          // ids = Object.keys(ids);
+          await asyncForEach(ids, async (workshop:any) => {
             // Add Deleted Workshops Logic
-
+            const realmPath = workshop.realmPath;
+            const realmPathSplit = realmPath.split("/")
+            const userId = realmPathSplit[3].replace("_","|");
+            const workshopId = realmPathSplit[5];
+            const existingWorkshop = await workshopCollection.findOne({workshopId});
+            if(existingWorkshop){
+              logger.error(`Workshop ${workshopId} is already migrated while running some other users profile.`);
+              return;
+            }
+            const _id = await workshopIdsCollection.findOne({uuid:workshopId });
+            if(!_id){
+              logger.error(`Cant find the new _id for the old uuid for the workshop ${workshopId}`);
+              return;
+            }
             if (deletedWorkshopId.indexOf(workshopId) >= 0) {
-              logger.error(`${workshopId} is on the Deleted Workshop list, so Ignoring.`);
+              logger.error(`${workshop} is on the Deleted Workshop list, so Ignoring.`);
               return;
             }
 
@@ -328,19 +354,16 @@ const migrate = async () => {
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
               const workshopRealm = await openRealm(
                 user,
-                `realms://${realmServerUrl}/${workshop.user.id.replace(
-                  "|",
-                  "_"
-                )}/workshop/${workshopId}`,
+                realmPath,
                 WorkshopSchema,
                 logger
               );
               if (workshopRealm) {
                 await MigrateWorkshopSchemas(
-                  workshopId,
-                  workshop.ids[workshopId],
-                  workshop.user,
-                  workshopRealm,
+                  workshopId,//workshop uuid
+                  _id._id, //new _id of the workshop
+                  {_id:userIds[userId],id:userId}, //the actual users who created the workshop
+                  workshopRealm, //the Realm we take on line 342
                   db,
                   logger,
                   idDB
@@ -353,6 +376,78 @@ const migrate = async () => {
             }
           });
         });
+
+        resolve(true)
+        return;
+
+
+        // Step 8.1.
+        /**
+         * Migrate Workshop Schemas for Single and Organization Temaplates.
+         */
+         const workshops = await idCol.find({ type: "workshop" }).toArray();
+         logger.info(`Migrating totally ${workshops.length} User's Workshops.`);
+ 
+         await asyncForEach(workshops, async (workshop) => {
+           let ids = workshop.ids;
+           ids = Object.keys(ids);
+           await asyncForEach(ids, async (workshopId: string) => {
+             // Add Deleted Workshops Logic
+ 
+             if (deletedWorkshopId.indexOf(workshopId) >= 0) {
+               logger.error(`${workshopId} is on the Deleted Workshop list, so Ignoring.`);
+               return;
+             }
+ 
+             // if (
+             //   [
+             //     "0999c84a-f55b-4278-9f1a-caa60e2e4941",
+             //     "72790171-3bb1-42e5-947d-a6bcf9120e38",
+             //     "7c95e71f-ee9f-4c4b-8aeb-41ecaa17c6b6",
+             //     "d170a020-810f-4bac-8805-5e75e5782f89",
+             //     "f46f3bb9-6bd1-4f25-930e-485eddbc1803",
+             //     "2de0fd49-59ee-4172-ad50-096507abdd24",
+             //     "5762fc36-7f1b-436a-8a65-74dc53f3c6b2",
+             //     "58c788d8-57a3-4f9c-b16b-472c346147dd",
+             //     "99c6e913-3c92-4469-9ffe-cb81f56f6506",
+             //     "95885cb9-0e2c-4adc-9d35-3c9ad23916f3",
+             //     "d9d04657-52a7-4be9-8165-39332c1a5f12",
+             //   ].indexOf(workshopId) === -1
+             // ) {
+             //   return;
+             // }
+ 
+             try {
+               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
+               const workshopRealm = await openRealm(
+                 user,
+                 `realms://${realmServerUrl}/${workshop.user.id.replace(
+                   "|",
+                   "_"
+                 )}/workshop/${workshopId}`,
+                 WorkshopSchema,
+                 logger
+               );
+               if (workshopRealm) {
+                 await MigrateWorkshopSchemas(
+                   workshopId,
+                   workshop.ids[workshopId],
+                   workshop.user,
+                   workshopRealm,
+                   db,
+                   logger,
+                   idDB
+                 );
+                 workshopRealm.close();
+               }
+             } catch (e) {
+               console.log(e);
+               reject(e);
+             }
+           });
+         });
+
+
 
         // Step 9.
         /**
