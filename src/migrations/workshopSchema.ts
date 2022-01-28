@@ -1039,19 +1039,17 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
 
 
                 const workshopCollection = db.collection("Workshop");
-                const idsCollection = idDb.collection('id');
+                const companiesCollection = idDb.collection('companies');
 
-                let companiesMapper = await idsCollection.findOne({ type: "company", "user.id": user.id });
-                if (companiesMapper) {
-                    companiesMapper = companiesMapper.ids;
-                }
+                let companiesMapper = await companiesCollection.findOne({uuid: workshopId});
+                
                 const o = workshopObject[0];
                 const n = workshopObject[0] as N_WorkshopType;
 
                 n._id = newWorkshopId,
                     n._partition = _partition;
                 if (companiesMapper) {
-                    n.company = companiesMapper[n.company];
+                    n.company = companiesMapper._id;
                 }
                 if (n.facilitator) {
                     n.facilitator = n.facilitator.replace("_", "|");
@@ -1096,10 +1094,12 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 logger.info(
                     _partitionString ? `Migrating Workshop ${workshopId} for Everyday of everybay board ${newWorkshopId} successful.` : `Migrating Workshop ${workshopId} successful.`
                 );
+                resolve({success:true, workshopId:null})
             } else {
                 logger.error(`Workshop ${workshopId} not found. So, Ignoring.`)
+                resolve({success:false, workshopId})
             }
-            resolve(true)
+            
         } catch (e) {
             console.log(e);
             reject(e)

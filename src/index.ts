@@ -175,16 +175,16 @@ const migrate = async () => {
         logger.info(
           `Migration of Global KPI: realms://${realmServerUrl}/GlobalKPI`
         );
-        const globalKPI: any = await openRealm(
-          user,
-          `realms://${realmServerUrl}/GlobalKPI`,
-          GlobalKPI,
-          logger
-        );
-        if (globalKPI) {
-          await MigrateGlobalKPI(globalKPI, db, logger, idDB);
-          globalKPI.close()
-        }
+        // const globalKPI: any = await openRealm(
+        //   user,
+        //   `realms://${realmServerUrl}/GlobalKPI`,
+        //   GlobalKPI,
+        //   logger
+        // );
+        // if (globalKPI) {
+        //   await MigrateGlobalKPI(globalKPI, db, logger, idDB);
+        //   globalKPI.close()
+        // }
 
         // Step 5.
         /**
@@ -193,16 +193,16 @@ const migrate = async () => {
         logger.info(
           `Migration Global User and Notifications from path: realms://${realmServerUrl}/GlobalUserAndNotification`
         );
-        const globalUserRealm: any = await openRealm(
-          user,
-          `realms://${realmServerUrl}/GlobalUserAndNotification`,
-          GlobalUserAndNotification,
-          logger
-        );
-        if (globalUserRealm) {
-          await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
-          globalUserRealm.close()
-        }
+        // const globalUserRealm: any = await openRealm(
+        //   user,
+        //   `realms://${realmServerUrl}/GlobalUserAndNotification`,
+        //   GlobalUserAndNotification,
+        //   logger
+        // );
+        // if (globalUserRealm) {
+        //   await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
+        //   globalUserRealm.close()
+        // }
 
         // Step 6.
         /**
@@ -218,7 +218,7 @@ const migrate = async () => {
               "_"
             )}/userProfile`,
             UserSchema,
-            logger
+            logger,
           );
           if (userSchema) {
             await MigrateUserSchemas(
@@ -227,11 +227,15 @@ const migrate = async () => {
               userSchema,
               db,
               logger,
-              idDB
+              idDB,
+              userIds
             );
             userSchema.close();
           }
         });
+
+        resolve(true);
+        return;
 
         // // Step 7.
         // /**
@@ -325,6 +329,7 @@ const migrate = async () => {
             // }
 
             try {
+              const ignoredWorkshops = [];
               // realms://changeway-development.de1a.cloud.realm.io/auth0_5e70a715c190f70c8ab66ce7/company/54ac7dfa-bd6c-4624-a7a2-41953e6547d1
               const workshopRealm = await openRealm(
                 user,
@@ -336,7 +341,7 @@ const migrate = async () => {
                 logger
               );
               if (workshopRealm) {
-                await MigrateWorkshopSchemas(
+               const {success, workshopId:ignoredWorkshopId}:any =  await MigrateWorkshopSchemas(
                   workshopId,
                   workshop.ids[workshopId],
                   workshop.user,
@@ -345,6 +350,9 @@ const migrate = async () => {
                   logger,
                   idDB
                 );
+                if(!success){
+                  ignoredWorkshops.push(ignoredWorkshopId)
+                }
                 workshopRealm.close();
               }
             } catch (e) {

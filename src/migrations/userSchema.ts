@@ -1,4 +1,4 @@
-import { Db, ObjectId } from "mongodb"
+import { Db, Logger, ObjectId } from "mongodb"
 import winston from "winston"
 import { N_FileType } from "../models/mongodb-realm/common/File";
 import { N_CompanyType } from "../models/mongodb-realm/user/Company";
@@ -11,7 +11,7 @@ import { compact } from 'lodash';
 import { N_UserType } from "../models/mongodb-realm/user/User";
 var ObjectID = require("bson-objectid");
 
-const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db: Db, logger: winston.Logger, idDb: Db) => {
+const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db: Db, logger: winston.Logger, idDb: Db, allUsers:any={}) => {
     return new Promise(async (resolve, reject) => {
         try {
 
@@ -96,7 +96,32 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
                         _id = new ObjectID();
                         newWorkshopIds.push({ uuid: w.workshopId, _id });
                     }
-                    workshopMapper[w.workshopId] = _id;
+                    const userId = w.url.split("/")[3].replace("_","|");//Original User Id
+                    logger.info(JSON.stringify({oldUser:userId, newUser:oldUserId, workshopId:w.workshopId}))
+                    const key =`ids.${w.workshopId}`
+                    if(userId!==oldUserId){//The user who has the access to the realm is not the owner.
+                        //TODO 
+                        // I need to find the oldusers ids  and add the workshop on his ids.
+                        await IDCollection.updateOne(
+                            {
+                                "user.id": userId,
+                                type: "workshop",
+                            },
+                            {
+                                $set: {
+                                    type: "workshop",
+                                    [key]: _id,
+                                    user: {
+                                        id: userId,
+                                        _id: allUsers[userId],
+                                    },
+                                },
+                            },
+                            { upsert: true }
+                        );
+                    }else{
+                        workshopMapper[w.workshopId] = _id;
+                    }
                     w.workshopId = _id;
                     w.url = `workshopRealm=${_id}`
                     workshops.push({ ...w, _id });
@@ -129,7 +154,15 @@ const MigrateUserSchemas = (oldUserId: any, userObjectId: any, realm: Realm, db:
                 const UserCollection = db.collection("User");
                 await UserCollection.insertOne(user);
                 await IDCollection.insertOne({ type: "company", ids: companyMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id } });
-                await IDCollection.insertOne({ type: "workshop", ids: workshopMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id } });
+                const existingWorkshopUser = await IDCollection.findOne({"user.id":oldUserId,type:"workshop"});
+                if(existingWorkshopUser){
+                    //Already I have created a user and mapped a deleted realm id.
+
+                }else{
+                    //Not found on the User list till now
+                    await IDCollection.insertOne({ type: "workshop", ids: workshopMapper, user: { id: oldUserId, _id: userObjectId, userProfile: userProfile._id } });
+                }
+               
                 if(newWorkshopIds.length>0){
                     await workshopsIdCollection.insertMany(newWorkshopIds);
                 }
