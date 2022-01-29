@@ -120,12 +120,18 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     `Migrating Workshop ${workshopId} for Everyday of everybay board ${newWorkshopId} for user ${user.id}.`
                 );
             }
+            let canEnter: any = false;
 
             const workshopObject = await readRealm<WorkshopType>(
                 realm,
                 "Workshop"
             );
-            if (workshopObject && workshopObject.length > 0) {
+            let { coll: templateObjects, ids: templateMetaDataMapper } = await readAndGenerateId<TemplateMetaDataType>(realm, "TemplateMetadata", "templateId");
+            canEnter = workshopObject && workshopObject.length > 0;
+            if (!canEnter) {
+                canEnter = templateObjects && templateObjects.length > 0;
+            }
+            if (canEnter) {
                 //Step 1: Id Mapper.
                 const { coll: actions, ids: actionMapper } = await readAndGenerateId<ActionType>(realm, "Action", "actionId");
                 const { coll: workshopParticipants, ids: participantMapper } = await readAndGenerateId<WorkshopParticipantType>(realm, "Participant", "email");
@@ -160,7 +166,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 let { coll: selects, ids: selectMapper } = await readAndGenerateId<SelectType>(realm, "Select", "selectId");
                 let { coll: scorecard, ids: scoreCardMapper } = await readAndGenerateId<ScorecardType>(realm, "Scorecard", "scorecardId");
                 let { coll: kpiList, ids: KPIMapper } = await readAndGenerateId<KPIType>(realm, "KPI", "id");
-                let { coll: templateObjects, ids: templateMetaDataMapper } = await readAndGenerateId<TemplateMetaDataType>(realm, "TemplateMetadata", "templateId");
+                // let { coll: templateObjects, ids: templateMetaDataMapper } = await readAndGenerateId<TemplateMetaDataType>(realm, "TemplateMetadata", "templateId");
                 //Composite Card 
                 const allIds = {
                     ...actionMapper,
@@ -854,8 +860,10 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n._id = summaryPostItMapper[o.postItId];
                     n._partition = _partition;
                     n.cardId = n.cardId ? boardCardMapper[n.cardId] : null;
-                    if (n.zoneId) {
+                    if (o.zoneId) {
                         n.zoneId = zoneMapper[o.zoneId]
+                    } else {
+                        n.zoneId = null;
                     }
                     if (n.owner) {
                         n.owner = n.owner.replace("_", "|");
@@ -993,9 +1001,20 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     }
                     if (n.postItId) {
                         n.postItId = postItMapper[n.postItId.postItId]
+                    } else {
+                        n.postItId = null
                     }
+
                     if (n.zoneId) {
                         n.zoneId = zoneMapper[n.zoneId.zoneId]
+                    } else {
+                        n.zoneId = null;
+                    }
+                    if (n.reason) {
+                        n.reason = n.reason.map(x => x === null ? "" : x);
+                    }
+                    if (n.dataSource) {
+                        n.dataSource = n.dataSource.map(x => x === null ? "" : x);
                     }
                     return n;
                 })
@@ -1037,61 +1056,63 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                 }
 
 
+                if (workshopObject && workshopObject.length > 0) {
+                    const workshopCollection = db.collection("Workshop");
+                    const companiesCollection = idDb.collection('companies');
+                    const o = workshopObject[0];
+                    const n = workshopObject[0] as N_WorkshopType;
+                    let companiesMapper = await companiesCollection.findOne({ uuid: n.company });
 
-                const workshopCollection = db.collection("Workshop");
-                const companiesCollection = idDb.collection('companies');
-                const o = workshopObject[0];
-                const n = workshopObject[0] as N_WorkshopType;
-                let companiesMapper = await companiesCollection.findOne({ uuid: n.company });
-                
-                n._id = newWorkshopId,
-                    n._partition = _partition;
-                if (companiesMapper) {
-                    n.company = companiesMapper._id;
-                }
-                if (n.facilitator) {
-                    n.facilitator = n.facilitator.replace("_", "|");
-                }
-                n.participants = o.participants.map((p) => participantMapper[p.email]);
-                n.templates = o.templates.map((t) => templateMetaDataMapper[t.templateId]);
-                n.process = o.process.map(p => ({ ...p, _id: new ObjectID() }));
-                n.tables = o.tables.map((t) => {
-                    t.rows = t.rows.map((r) => {
-                        r.value = r.value.map((d) => ({ ...d, _id: new ObjectID() }));
-                        return { ...r, _id: new ObjectID() };
+                    n._id = newWorkshopId,
+                        n._partition = _partition;
+                    if (companiesMapper) {
+                        n.company = companiesMapper._id;
+                    }
+                    if (n.facilitator) {
+                        n.facilitator = n.facilitator.replace("_", "|");
+                    }
+                    n.participants = o.participants.map((p) => participantMapper[p.email]);
+                    n.templates = o.templates.map((t) => templateMetaDataMapper[t.templateId]);
+                    n.process = o.process.map(p => ({ ...p, _id: new ObjectID() }));
+                    n.tables = o.tables.map((t) => {
+                        t.rows = t.rows.map((r) => {
+                            r.value = r.value.map((d) => ({ ...d, _id: new ObjectID() }));
+                            return { ...r, _id: new ObjectID() };
+                        })
+                        return { ...t, _id: ObjectID() };
                     })
-                    return { ...t, _id: ObjectID() };
-                })
-                n.workshopLocations = o.workshopLocations.map(l => {
-                    return { ...l, _id: new ObjectID() }
-                })
-                n.columns = o.columns.map((c) => preEventChecklistMapper[c.id]);
-                if (n.board) {
-                    n.board = boardMapper[o.board.boardId];
+                    n.workshopLocations = o.workshopLocations.map(l => {
+                        return { ...l, _id: new ObjectID() }
+                    })
+                    n.columns = o.columns.map((c) => preEventChecklistMapper[c.id]);
+                    if (n.board) {
+                        n.board = boardMapper[o.board.boardId];
+                    }
+                    n.objectList = [];// o.objectList.map((o) => allIds[o.objectId]);
+                    if (n.nonRecurringKPITotals) {
+                        let _id = new ObjectID();
+                        kpiResultsCollection.insertOne({ ...n.nonRecurringKPITotals, _partition: _partition, _id });
+                        n.nonRecurringKPITotals = _id;
+                    }
+                    if (n.recurringKPITotals) {
+                        let _id = new ObjectID();
+                        kpiResultsCollection.insertOne({ ...n.recurringKPITotals, _partition: _partition, _id });
+                        n.recurringKPITotals = _id;
+                    }
+                    if (n.breakthrough) {
+                        const b = n.breakthrough;
+                        b.level0Metadata = b.level0Metadata.map((s: any) => ({ ...s, _id: new ObjectID() }))
+                        b.generalMetadata = b.generalMetadata.map((s: any) => ({ ...s, _id: new ObjectID() }))
+                        b.level1Metadata = b.level1Metadata.map((s: any) => ({ ...s, _id: new ObjectID() }))
+                        n.breakthrough = { ...b, _id: new ObjectID() }
+                    }
+                    n.labelList = o.labelList.map((l) => labelMapper[l._id]);
+                    await workshopCollection.insertOne(n);
                 }
-                n.objectList = [];// o.objectList.map((o) => allIds[o.objectId]);
-                if (n.nonRecurringKPITotals) {
-                    let _id = new ObjectID();
-                    kpiResultsCollection.insertOne({ ...n.nonRecurringKPITotals, _partition: _partition, _id });
-                    n.nonRecurringKPITotals = _id;
-                }
-                if (n.recurringKPITotals) {
-                    let _id = new ObjectID();
-                    kpiResultsCollection.insertOne({ ...n.recurringKPITotals, _partition: _partition, _id });
-                    n.recurringKPITotals = _id;
-                }
-                if (n.breakthrough) {
-                    const b = n.breakthrough;
-                    b.level0Metadata = b.level0Metadata.map((s: any) => ({ ...s, _id: new ObjectID() }))
-                    b.generalMetadata = b.generalMetadata.map((s: any) => ({ ...s, _id: new ObjectID() }))
-                    b.level1Metadata = b.level1Metadata.map((s: any) => ({ ...s, _id: new ObjectID() }))
-                    n.breakthrough = { ...b, _id: new ObjectID() }
-                }
-                n.labelList = o.labelList.map((l) => labelMapper[l._id]);
-                await workshopCollection.insertOne(n);
                 logger.info(
                     _partitionString ? `Migrating Workshop ${workshopId} for Everyday of everybay board ${newWorkshopId} successful.` : `Migrating Workshop ${workshopId} successful.`
                 );
+
             } else {
                 logger.error(`Workshop ${workshopId} not found. So, Ignoring.`)
             }

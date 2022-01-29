@@ -15,7 +15,8 @@ export type KPIType = {
     recurring: RevenueType| any,
     nonRecurring: RevenueType | any,
     currency: string,
-    timesUsed: number
+    timesUsed: number,
+    kpiId:string;
 }
 
 

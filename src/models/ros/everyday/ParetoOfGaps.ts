@@ -20,7 +20,8 @@ export type ParetoOfGapsType = {
 		comments: CommentType[],
 		percentFreq: number,
 		percentLostTime: number,
-		issueUUID:any
+		issueUUID:any,
+		everydayUUID:any
 
 }
 

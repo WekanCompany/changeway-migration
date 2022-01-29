@@ -5,6 +5,7 @@ export type PlanType = {
 	planValues: PlanValuesType[],
 	dimensionId: string,
 	boardId: string,
+	boardUUID:string|any;
 	planId: string,
 	planData?: number[],
 	default: boolean,

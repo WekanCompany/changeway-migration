@@ -72,19 +72,19 @@ const userIDRunner = async () => {
     if (Account) {
       Account.forEach((user: any) => {
         const { providerId: userId }: any = user;
-        if (
-          userId === "auth0|5e8f20094909340c15125d87" ||
-          userId === "auth0|5f846a94d096aa006e7bc587"
-        ) {
-          let _id= new ObjectID();
-          userIds[userId] = _id;
-          userIdsArray.push({uuid:userId, _id})
-        }
-        // if (userId.startsWith("auth0|")) {
+        // if (
+        //   userId === "auth0|5e8f20094909340c15125d87" ||
+        //   userId === "auth0|5f846a94d096aa006e7bc587"
+        // ) {
         //   let _id= new ObjectID();
         //   userIds[userId] = _id;
         //   userIdsArray.push({uuid:userId, _id})
         // }
+        if (userId.startsWith("auth0|")) {
+          let _id= new ObjectID();
+          userIds[userId] = _id;
+          userIdsArray.push({uuid:userId, _id})
+        }
         
       });
       const userIdColl= idDB.collection("userIdColl");
@@ -185,16 +185,16 @@ const migrate = async () => {
         logger.info(
           `Migration of Global KPI: realms://${realmServerUrl}/GlobalKPI`
         );
-        // const globalKPI: any = await openRealm(
-        //   user,
-        //   `realms://${realmServerUrl}/GlobalKPI`,
-        //   GlobalKPI,
-        //   logger
-        // );
-        // if (globalKPI) {
-        //   await MigrateGlobalKPI(globalKPI, db, logger, idDB);
-        //   globalKPI.close()
-        // }
+        const globalKPI: any = await openRealm(
+          user,
+          `realms://${realmServerUrl}/GlobalKPI`,
+          GlobalKPI,
+          logger
+        );
+        if (globalKPI) {
+          await MigrateGlobalKPI(globalKPI, db, logger, idDB);
+          globalKPI.close()
+        }
 
         // Step 5.
         /**
@@ -203,16 +203,16 @@ const migrate = async () => {
         logger.info(
           `Migration Global User and Notifications from path: realms://${realmServerUrl}/GlobalUserAndNotification`
         );
-        // const globalUserRealm: any = await openRealm(
-        //   user,
-        //   `realms://${realmServerUrl}/GlobalUserAndNotification`,
-        //   GlobalUserAndNotification,
-        //   logger
-        // );
-        // if (globalUserRealm) {
-        //   await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
-        //   globalUserRealm.close()
-        // }
+        const globalUserRealm: any = await openRealm(
+          user,
+          `realms://${realmServerUrl}/GlobalUserAndNotification`,
+          GlobalUserAndNotification,
+          logger
+        );
+        if (globalUserRealm) {
+          await MigrateGlobalUserAndNotification(globalUserRealm, db, logger);
+          globalUserRealm.close()
+        }
 
         // Step 6.
         /**
@@ -376,11 +376,6 @@ const migrate = async () => {
             }
           });
         });
-
-        resolve(true)
-        return;
-
-
         // Step 8.1.
         /**
          * Migrate Workshop Schemas for Single and Organization Temaplates.
@@ -447,7 +442,8 @@ const migrate = async () => {
            });
          });
 
-
+        // resolve(true)
+        // return;
 
         // Step 9.
         /**

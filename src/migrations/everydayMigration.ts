@@ -113,6 +113,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
             Plan = Plan.map((e: PlanType) => {
                 const _id = PlanMapper[e._id];
                 e.planValues = e.planValues.map((x) => PlanValuesMapper[x._id]);
+                e.boardUUID = e.boardId;
                 if (e.boardId) {
                     e.boardId = EverydayBoardMapper[e.boardId];
                 }
@@ -149,7 +150,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
             const ShiftTimingColl = db.collection("ShiftTiming");
             ShiftTiming = ShiftTiming.map((e: ShiftTimingType) => {
                 const _id = ShiftTimingMapper[e._id];
-
+                e.boardUUID = e.boardId;
                 if (e.boardId) {
                     e.boardId = EverydayBoardMapper[e.boardId];
                 }
@@ -422,6 +423,7 @@ export const MigrateEverydaySchemas = (companyId: any, newCompanyId: any, user: 
                 if (e.missReason) {
                     e.missReason = MissReasonMapper[e.missReason._id];
                 }
+                e.everydayUUID = e.everydayId;
                 if (e.everydayId) {
                     e.everydayId = EverydayBoardMapper[e.everydayId];
                 }

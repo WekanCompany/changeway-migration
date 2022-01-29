@@ -288,6 +288,7 @@ const MigrateCompanySchemas = (
                         magnets.push(newMagnet._id);
                     });
                     n.magnets = magnets;
+                    n.templateUUID = n.templateId;
                     n.templateId = null;
                     if (!n.deleted) {
                         let realmUrlSplit = n.realmUrl

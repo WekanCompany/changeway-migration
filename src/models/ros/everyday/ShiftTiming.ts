@@ -2,6 +2,7 @@ export type ShiftTimingType = {
     _id: string,
     dimensionId: string,
     boardId: string,
+    boardUUID:string|any;
     shiftId: string,
     shiftNumber: string,
     shiftHoursNumber: string,

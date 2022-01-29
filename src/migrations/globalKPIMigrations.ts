@@ -64,8 +64,9 @@ const MigrateGlobalKPI = (realm: any, db: Db, logger: winston.Logger, idDb: Db) 
                         kpi.nonRecurring = _id;
                     }
                     kpi._id = new ObjectID();
+                    kpi.kpiId = kpi.id;
                     kpiIds[kpi.id] = kpi._id;
-                    kpi = omit(["id"], kpi);
+                    // kpi = omit(["id"], kpi);
                     kpi._partition = "global";
                     await KPICollection.insertOne(kpi);
                 });

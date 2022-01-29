@@ -10,6 +10,7 @@ export type SingleTemplateType = {
 	order: number,
 	deleted: boolean,
 	templateId?: any,
+	templateUUID?: any,
 	magnets: MagnetType[],
 	realmUrl: string,
 	labels: LabelType[]

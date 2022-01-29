@@ -6,7 +6,7 @@ export type SummaryPostItType = {
 	y: number,
 	value: string,
 	state: string,
-	zoneId: string,
+	zoneId: string|null,
 	flowTable?: number[],
 	magnetTable?: number[],
 	derivationTable?: number[],
