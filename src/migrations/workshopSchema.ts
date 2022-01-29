@@ -660,7 +660,7 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     if (n.icon) {
                         n.icon._id = new ObjectID();
                     }
-
+                    "TemplateMetadata"
                     return n;
                 })
                 if (zone.length > 0) {
@@ -686,6 +686,11 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     let newAction: N_ActionType = action as N_ActionType;
                     newAction._id = actionMapper[action.actionId];
                     newAction._partition = _partition;
+                    if (newAction.suggestedGoal) {
+                        newAction.suggestedGoal = goalMapper[newAction.suggestedGoal.goalId] || null;
+                    } else {
+                        newAction.suggestedGoal = null
+                    }
                     newAction.assignees = newAction.assignees.map((p) => participantMapper[p.email])
                     // newAction = omit(["actionId"], newAction)
                     await actionCollection.insertOne(newAction);
@@ -1039,7 +1044,14 @@ const MigrateWorkshopSchemas = (workshopId: any, newWorkshopId: any, user: any, 
                     n.textGoals = o.textGoals.map(t => textGoalMapper[t.textGoalId]);
                     n.generalObject = o.generalObject.map(g => generalMapper[g.generalId]);
                     n.actions = o.actions.map(a => actionMapper[a.actionId]);
-                    n.xMatrices = o.xMatrices.map(x => boardCardMapper[x.xMatrixId]);
+                    n.xMatrices = o.xMatrices.map(x => {
+                        let _id = boardCardMapper[x.xMatrixId];
+                        if(!_id){
+                            _id = xMatricMapper[x.xMatrixId];
+                        }
+                        return _id;
+                    }
+                    );
                     if (n.settings) {
                         n.settings = { ...o.settings, _id: new ObjectID() };
                     }

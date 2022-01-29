@@ -13,7 +13,7 @@ export type ActionType = {
 	response: string,
 	respondReason?: string,
 	suggestedChange?: string,
-	suggestedGoal?: GoalType,
+	suggestedGoal?: any,
 	primaryGoal: any,
 	secondaryGoal: any
 }
